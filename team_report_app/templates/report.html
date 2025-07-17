@@ -1,0 +1,7 @@
+<h2>Weekly Updates</h2>
+<ul>
+  {% for entry in updates %}
+    <li><strong>{{ entry.name }}</strong> ({{ entry.project }}):<br>{{ entry.update }}</li>
+  {% endfor %}
+</ul>
+<a href="/export/word">Download Word</a> | <a href="/export/pdf">Download PDF</a>
