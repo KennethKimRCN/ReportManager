@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>주간보고 수정</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: auto; padding: 1rem; }
+    label { font-weight: bold; display: block; margin-top: 1rem; }
+    textarea, select, input[type="text"] { width: 100%; padding: 0.5rem; margin-top: 0.2rem; font-size: 1rem; }
+    button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover { background: #2980b9; }
+    .info { margin-top: 0.5rem; color: #555; }
+    .cancel-button {
+      background: #ccc;
+      color: #333;
+      margin-left: 1rem;
+    }
+    .cancel-button:hover {
+      background: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <h1>주간보고 수정</h1>
+  <form method="post">
+    <label>이름</label>
+    <input type="text" name="name" value="{{ update.name }}" readonly>
+
+    <label>직급</label>
+    <input type="text" name="position" value="{{ update.position }}" readonly>
+
+    <label>주차</label>
+    <select name="week" required>
+      {% for w in week_options %}
+        <option value="{{ w }}" {% if update.week == w %}selected{% endif %}>{{ w }}</option>
+      {% endfor %}
+    </select>
+
+    <label>프로젝트 특이사항</label>
+    <textarea name="project_summary" rows="3">{{ update.project_summary }}</textarea>
+
+    <label>Key Milestone</label>
+    <textarea name="milestones" rows="3">{{ update.milestones }}</textarea>
+
+    <label>진행상황</label>
+    <textarea name="progress" rows="3">{{ update.progress }}</textarea>
+
+    <label>특이사항 (일정변경, Risk, 예상일정 등)</label>
+    <textarea name="project_issues" rows="3">{{ update.project_issues }}</textarea>
+
+    <label>영업지원 사항</label>
+    <textarea name="sales_support" rows="3">{{ update.sales_support }}</textarea>
+
+    <label>그 외 특이사항</label>
+    <textarea name="other_notes" rows="3">{{ update.other_notes }}</textarea>
+
+    <label>개인 일정 - 출장</label>
+    <textarea name="business_trip" rows="2">{{ update.business_trip }}</textarea>
+
+    <label>개인 일정 - 외근</label>
+    <textarea name="external_work" rows="2">{{ update.external_work }}</textarea>
+
+    <label>개인 일정 - 휴가</label>
+    <textarea name="vacation" rows="2">{{ update.vacation }}</textarea>
+
+    <label>개인 일정 - 휴일근무</label>
+    <textarea name="weekend_work" rows="2">{{ update.weekend_work }}</textarea>
+
+    <button type="submit">수정하기</button>
+    <a href="{{ url_for('report_detail', report_id=update.id) }}" class="cancel-button" style="display:inline-block; padding:0.5rem 1rem; text-decoration:none;">취소</a>
+  </form>
+</body>
+</html>
