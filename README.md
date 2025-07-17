@@ -26,7 +26,7 @@ cd team-report-app
 ### 2. Create Virtual Environment
 ```
 python -m venv venv
-.env\Scriptsctivate
+.venv\Scripts\activate
 ```
 
 ### 3. Install Requirements
