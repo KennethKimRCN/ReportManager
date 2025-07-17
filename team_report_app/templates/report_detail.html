@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>주간보고 상세보기</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: auto; padding: 1rem; }
+    h1 { margin-bottom: 0.5rem; }
+    p { margin: 0.3rem 0; }
+    .section { margin-top: 1rem; }
+    label { font-weight: bold; display: block; margin-top: 1rem; }
+    pre { background: #f4f4f4; padding: 0.5rem; white-space: pre-wrap; border-radius: 4px; }
+    a { display: inline-block; margin-top: 1rem; text-decoration: none; color: #2980b9; }
+    .top-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+    }
+    .top-actions button,
+    .top-actions a {
+    padding: 0.4rem 0.8rem;
+    background: #3498db;
+    color: white;
+    text-decoration: none;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    }
+    .top-actions button:hover,
+    .top-actions a:hover {
+    background: #2980b9;
+    cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>{{ update.name }} ({{ update.position }})</h1>
+  <p><strong>주차:</strong> {{ update.week }}</p>
+  <div class="top-actions">
+    <button onclick="window.print()">🖨 인쇄</button>
+    <a href="{{ url_for('export_single_word', report_id=update.id) }}">📄 Word로 내보내기</a>
+    <a href="{{ url_for('dashboard') }}">← 대시보드로 돌아가기</a>
+  </div>
+  <div class="section">
+    <label>프로젝트 정보:</label>
+    <pre>{{ update.project_summary }}</pre>
+
+    <label>Key Milestone:</label>
+    <pre>{{ update.milestones }}</pre>
+
+    <label>진행상황:</label>
+    <pre>{{ update.progress }}</pre>
+
+    <label>특이사항:</label>
+    <pre>{{ update.project_issues }}</pre>
+
+    <label>영업지원:</label>
+    <pre>{{ update.sales_support }}</pre>
+
+    <label>기타 특이사항:</label>
+    <pre>{{ update.other_notes }}</pre>
+
+    <label>출장:</label>
+    <pre>{{ update.business_trip }}</pre>
+
+    <label>외근:</label>
+    <pre>{{ update.external_work }}</pre>
+
+    <label>휴가:</label>
+    <pre>{{ update.vacation }}</pre>
+
+    <label>휴일근무:</label>
+    <pre>{{ update.weekend_work }}</pre>
+  </div>
+
+  <a href="{{ url_for('dashboard') }}">← 대시보드로 돌아가기</a>
+</body>
+</html>

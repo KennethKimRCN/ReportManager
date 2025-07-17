@@ -1,34 +1,25 @@
 from docx import Document
-from models import Update
 import os
 
-def generate_word():
-    doc = Document()
-    doc.add_heading('Weekly Team Report', 0)
-    updates = Update.query.all()
+def generate_word(single_report=None):
+    document = Document()
 
-    for u in updates:
-        doc.add_heading(f"{u.name} - {u.project}", level=1)
-        doc.add_paragraph(u.update)
+    updates = [single_report] if single_report else Update.query.order_by(Update.week.desc()).all()
 
-    path = 'reports/weekly_report.docx'
-    os.makedirs('reports', exist_ok=True)
-    doc.save(path)
-    return path
+    for update in updates:
+        document.add_heading(f"{update.name} ({update.position}) - {update.week}", level=1)
+        document.add_paragraph(f"프로젝트 정보:\n{update.project_summary}")
+        document.add_paragraph(f"Key Milestone:\n{update.milestones}")
+        document.add_paragraph(f"진행상황:\n{update.progress}")
+        document.add_paragraph(f"특이사항:\n{update.project_issues}")
+        document.add_paragraph(f"영업지원:\n{update.sales_support}")
+        document.add_paragraph(f"기타 특이사항:\n{update.other_notes}")
+        document.add_paragraph(f"출장:\n{update.business_trip}")
+        document.add_paragraph(f"외근:\n{update.external_work}")
+        document.add_paragraph(f"휴가:\n{update.vacation}")
+        document.add_paragraph(f"휴일근무:\n{update.weekend_work}")
+        document.add_paragraph("\n")
 
-def generate_pdf():
-    from reportlab.pdfgen import canvas
-    updates = Update.query.all()
-    path = 'reports/weekly_report.pdf'
-    os.makedirs('reports', exist_ok=True)
-    c = canvas.Canvas(path)
-    y = 800
-    for u in updates:
-        c.drawString(50, y, f"{u.name} - {u.project}")
-        y -= 20
-        for line in u.update.splitlines():
-            c.drawString(60, y, line)
-            y -= 15
-        y -= 20
-    c.save()
-    return path
+    output_path = os.path.join("instance", "report_export.docx")
+    document.save(output_path)
+    return output_path

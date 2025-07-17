@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>주간보고 대시보드</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 1rem;
+      background: #f8f9fa;
+    }
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+    }
+    .top-actions {
+      display: flex;
+      justify-content: space-between;
+      margin: 1rem 0;
+    }
+    .top-actions a {
+      text-decoration: none;
+      background: #3498db;
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+    }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+    .card {
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      transition: transform 0.2s ease;
+    }
+    .card:hover {
+      transform: scale(1.02);
+      cursor: pointer;
+    }
+    .card h3 {
+      margin: 0;
+      color: #34495e;
+    }
+    .card p {
+      margin: 0.3rem 0;
+      color: #666;
+    }
+    .logout-link {
+      margin-top: 2rem;
+      text-align: center;
+    }
+    .logout-link a {
+      color: #c0392b;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>주간보고 대시보드</h1>
+
+  <div class="top-actions">
+    <form method="get" action="/dashboard" style="display: flex; gap: 0.5rem;">
+      <input type="text" name="query" placeholder="이름 또는 주차 검색 (e.g. Y25W28)" value="{{ request.args.get('query', '') }}">
+      <button type="submit">검색</button>
+    </form>
+    <a href="/submit">+ 새 보고서 제출</a>
+    <a href="/logout">로그아웃</a>
+  </div>
+
+  <div class="card-grid">
+    {% for update in updates %}
+      <a href="{{ url_for('report_detail', report_id=update.id) }}" style="text-decoration: none; color: inherit;">
+        <div class="card">
+          <h3>{{ update.name }} ({{ update.position }})</h3>
+          <p><strong>주차:</strong> {{ update.week }}</p>
+          <p><strong>프로젝트:</strong> {{ update.project_summary[:50] ~ ('...' if update.project_summary|length > 50 else '') }}</p>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+
+  <div class="logout-link">
+    <a href="/logout">로그아웃</a>
+  </div>
+</body>
+</html>

@@ -1,7 +1,57 @@
-<h2>Weekly Updates</h2>
-<ul>
-  {% for entry in updates %}
-    <li><strong>{{ entry.name }}</strong> ({{ entry.project }}):<br>{{ entry.update }}</li>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>주간보고 현황</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 900px; margin: auto; padding: 1rem; }
+    h1, h2 { color: #2c3e50; }
+    section { border-bottom: 1px solid #ddd; padding-bottom: 1rem; margin-bottom: 1rem; }
+    pre { white-space: pre-wrap; background: #f5f5f5; padding: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>주간보고 현황</h1>
+
+  {% for update in updates %}
+  <section>
+    <h2>{{ update.name }} {{ update.position }} – {{ update.week }}</h2>
+
+    <h3>프로젝트 특이사항</h3>
+    <p><strong>프로젝트 정보:</strong></p>
+    <pre>{{ update.project_summary }}</pre>
+
+    <p><strong>Key Milestone:</strong></p>
+    <pre>{{ update.milestones }}</pre>
+
+    <p><strong>진행상황:</strong></p>
+    <pre>{{ update.progress }}</pre>
+
+    <p><strong>특이사항:</strong></p>
+    <pre>{{ update.project_issues }}</pre>
+
+    <h3>영업지원 사항</h3>
+    <pre>{{ update.sales_support }}</pre>
+
+    <h3>그 외 특이사항</h3>
+    <pre>{{ update.other_notes }}</pre>
+
+    <h3>개인 일정</h3>
+    <p><strong>출장:</strong></p>
+    <pre>{{ update.business_trip }}</pre>
+
+    <p><strong>외근:</strong></p>
+    <pre>{{ update.external_work }}</pre>
+
+    <p><strong>휴가:</strong></p>
+    <pre>{{ update.vacation }}</pre>
+
+    <p><strong>휴일근무:</strong></p>
+    <pre>{{ update.weekend_work }}</pre>
+  </section>
+  {% else %}
+    <p>제출된 보고서가 없습니다.</p>
   {% endfor %}
-</ul>
-<a href="/export/word">Download Word</a> | <a href="/export/pdf">Download PDF</a>
+
+</body>
+</html>

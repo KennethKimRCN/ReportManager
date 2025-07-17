@@ -1,10 +1,68 @@
-<form action="/submit" method="post">
-    <label for="name">Name:</label><br>
-    <input type="text" name="name" required><br>
-    <label for="project">Project:</label><br>
-    <input type="text" name="project" required><br>
-    <label for="update">Weekly Update:</label><br>
-    <textarea name="update" rows="5" required></textarea><br>
-    <button type="submit">Submit</button>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>주간보고 제출</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: auto; padding: 1rem; }
+    label { display: block; margin-top: 1rem; font-weight: bold; }
+    input, select, textarea { width: 100%; padding: 0.5rem; margin-top: 0.3rem; font-size: 1rem; }
+    button { margin-top: 1.5rem; padding: 0.7rem 1.5rem; font-size: 1rem; }
+    .userinfo { margin-bottom: 1rem; font-size: 1.1rem; }
+    .userinfo strong { width: 70px; display: inline-block; }
+    a.logout-link { display: inline-block; margin-top: 1rem; color: #c0392b; text-decoration: none; }
+    a.logout-link:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <h1>주간보고 제출</h1>
+
+  <div class="userinfo">
+    <p><strong>이름:</strong> {{ name }}</p>
+    <p><strong>직급:</strong> {{ position }}</p>
+  </div>
+
+  <form action="/submit" method="post">
+    <label>주차:</label>
+    <select name="week" required>
+      {% for week in week_options %}
+        <option value="{{ week }}">{{ week }}</option>
+      {% endfor %}
+    </select>
+
+    <label>프로젝트 정보:</label>
+    <textarea name="project_summary" rows="2"></textarea>
+
+    <label>Key Milestone:</label>
+    <textarea name="milestones" rows="4"></textarea>
+
+    <label>진행상황:</label>
+    <textarea name="progress" rows="4"></textarea>
+
+    <label>특이사항:</label>
+    <textarea name="project_issues" rows="4"></textarea>
+
+    <label>영업지원:</label>
+    <textarea name="sales_support" rows="3"></textarea>
+
+    <label>기타 특이사항:</label>
+    <textarea name="other_notes" rows="3"></textarea>
+
+    <label>출장:</label>
+    <textarea name="business_trip" rows="3"></textarea>
+
+    <label>외근:</label>
+    <textarea name="external_work" rows="3"></textarea>
+
+    <label>휴가:</label>
+    <textarea name="vacation" rows="3"></textarea>
+
+    <label>휴일근무:</label>
+    <textarea name="weekend_work" rows="3"></textarea>
+
+    <button type="submit">제출</button>
   </form>
-  
+
+  <a class="logout-link" href="{{ url_for('logout') }}">로그아웃</a>
+</body>
+</html>
