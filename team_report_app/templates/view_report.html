@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>주간보고 상세보기</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 1.5rem;
+      background-color: #fdfdfd;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h2, h3 {
+      margin-top: 1rem;
+      color: #333;
+    }
+
+    .section {
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #f8f8f8;
+      border-left: 4px solid #007BFF;
+    }
+
+    .label {
+      font-weight: bold;
+      color: #555;
+    }
+
+    .value {
+      margin: 0.5rem 0;
+      white-space: pre-wrap;
+    }
+
+    a.button {
+      display: inline-block;
+      margin-top: 1.5rem;
+      padding: 0.5rem 1rem;
+      background-color: #007BFF;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📄 주간보고 상세보기</h2>
+    <p><strong>이름:</strong> {{ report.user.name }} ({{ report.user.position }})</p>
+    <p><strong>글로벌 사번:</strong> {{ report.user.employee_id }}</p>
+    <p><strong>주차:</strong> {{ report.week }}</p>
+
+    <h3>📁 프로젝트 정보</h3>
+    <div class="section">
+      <div class="label">Solution Product:</div>
+      <div class="value">{{ report.project.solution_name }}</div>
+
+      <div class="label">Company / Location:</div>
+      <div class="value">{{ report.project.company }} / {{ report.project.location }}</div>
+
+      <div class="label">Project Name:</div>
+      <div class="value">{{ report.project.project_name }}</div>
+
+      <div class="label">Code:</div>
+      <div class="value">{{ report.project.code }}</div>
+    </div>
+
+    <h3>📌 보고 내용</h3>
+    <div class="section">
+      <div class="label">진행상황:</div>
+      <div class="value">{{ report.progress }}</div>
+
+      <div class="label">특이사항:</div>
+      <div class="value">{{ report.project_issues }}</div>
+
+      <div class="label">영업지원 사항:</div>
+      <div class="value">{{ report.sales_support }}</div>
+
+      <div class="label">그 외 특이사항:</div>
+      <div class="value">{{ report.other_notes }}</div>
+
+      <div class="label">출장:</div>
+      <div class="value">{{ report.business_trip }}</div>
+
+      <div class="label">외근:</div>
+      <div class="value">{{ report.external_work }}</div>
+
+      <div class="label">휴가:</div>
+      <div class="value">{{ report.vacation }}</div>
+
+      <div class="label">휴일근무:</div>
+      <div class="value">{{ report.weekend_work }}</div>
+    </div>
+
+    <a href="{{ url_for('dashboard') }}" class="button">← 대시보드로 돌아가기</a>
+  </div>
+</body>
+</html>

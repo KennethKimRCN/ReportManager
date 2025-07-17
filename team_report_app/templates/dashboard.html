@@ -3,89 +3,177 @@
 <head>
   <meta charset="UTF-8">
   <title>주간보고 대시보드</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    body {
-      font-family: Arial, sans-serif;
+    .container {
+      max-width: 900px;
+      margin: auto;
       padding: 1rem;
-      background: #f8f9fa;
     }
-    h1 {
-      text-align: center;
-      color: #2c3e50;
-    }
-    .top-actions {
+
+    .top-bar {
       display: flex;
       justify-content: space-between;
-      margin: 1rem 0;
+      margin-bottom: 1.5rem;
     }
-    .top-actions a {
-      text-decoration: none;
-      background: #3498db;
-      color: white;
-      padding: 0.5rem 1rem;
-      border-radius: 4px;
-    }
+
     .card-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1rem;
     }
+
     .card {
-      background: white;
-      border: 1px solid #ddd;
-      border-radius: 6px;
+      background: #f2f2f2;
       padding: 1rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      transition: transform 0.2s ease;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.2s;
     }
+
     .card:hover {
       transform: scale(1.02);
-      cursor: pointer;
     }
+
     .card h3 {
-      margin: 0;
-      color: #34495e;
+      margin: 0 0 0.5rem;
+      font-size: 1.1rem;
     }
+
     .card p {
-      margin: 0.3rem 0;
-      color: #666;
+      margin: 0;
+      font-size: 0.9rem;
     }
-    .logout-link {
-      margin-top: 2rem;
-      text-align: center;
-    }
-    .logout-link a {
-      color: #c0392b;
+
+    .button {
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #007BFF;
+      color: white;
       text-decoration: none;
+      font-weight: bold;
+    }
+
+    /* Modal styling */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.5);
+    }
+
+    .modal-content {
+      background-color: #fff;
+      margin: 5% auto;
+      padding: 1rem 2rem;
+      border-radius: 10px;
+      width: 90%;
+      max-width: 600px;
+    }
+
+    .modal-content label {
+      font-weight: bold;
+      display: block;
+      margin-top: 1rem;
+    }
+
+    .modal-content input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .modal-content button {
+      margin-top: 1.5rem;
+      padding: 0.6rem 1.5rem;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .close {
+      float: right;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #aaa;
+    }
+
+    .close:hover {
+      color: #000;
     }
   </style>
 </head>
 <body>
-  <h1>주간보고 대시보드</h1>
+  <div class="container">
+    <div class="top-bar">
+      <h1>📋 주간보고 대시보드</h1>
+      <div>
+        <a class="button" href="{{ url_for('submit') }}">+ 새 보고서 작성</a>
+        <button class="button" onclick="document.getElementById('projectModal').style.display='block'">+ 프로젝트 등록</button>
+      </div>
+    </div>
 
-  <div class="top-actions">
-    <form method="get" action="/dashboard" style="display: flex; gap: 0.5rem;">
-      <input type="text" name="query" placeholder="이름 또는 주차 검색 (e.g. Y25W28)" value="{{ request.args.get('query', '') }}">
-      <button type="submit">검색</button>
-    </form>
-    <a href="/submit">+ 새 보고서 제출</a>
-    <a href="/logout">로그아웃</a>
+    {% if reports %}
+      <div class="card-grid">
+        {% for report in reports %}
+          <a class="card" href="{{ url_for('view_report', update_id=report.id) }}">
+            <h3>{{ report.week }}</h3>
+            <p><strong>{{ report.user.name }} {{ report.user.position }}</strong></p>
+            <p>{{ report.project.solution_name }} / {{ report.project.project_name }}</p>
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p>아직 보고서가 없습니다.</p>
+    {% endif %}
   </div>
 
-  <div class="card-grid">
-    {% for update in updates %}
-      <a href="{{ url_for('report_detail', report_id=update.id) }}" style="text-decoration: none; color: inherit;">
-        <div class="card">
-          <h3>{{ update.name }} ({{ update.position }})</h3>
-          <p><strong>주차:</strong> {{ update.week }}</p>
-          <p><strong>프로젝트:</strong> {{ update.project_summary[:50] ~ ('...' if update.project_summary|length > 50 else '') }}</p>
-        </div>
-      </a>
-    {% endfor %}
+  <!-- Modal Form -->
+  <div id="projectModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="document.getElementById('projectModal').style.display='none'">&times;</span>
+      <h2>📁 프로젝트 등록</h2>
+      <form method="POST" action="{{ url_for('create_project') }}">
+        <label for="solution_name">솔루션 제품명:</label>
+        <input type="text" name="solution_name" placeholder="예: MES, APM, RMS" required>
+
+        <label for="location">지역:</label>
+        <input type="text" name="location" placeholder="예: 여수, 울산, 대산" required>
+
+        <label for="company">고객사:</label>
+        <input type="text" name="company" placeholder="예: LG화학, 한화솔루션" required>
+
+        <label for="project_name">프로젝트명:</label>
+        <input type="text" name="project_name" placeholder="예: 여수 공장 MES 고도화" required>
+
+        <label for="code">코드:</label>
+        <input type="text" name="code" placeholder="예: Y24-032" required>
+
+        <button type="submit">등록</button>
+      </form>
+    </div>
   </div>
 
-  <div class="logout-link">
-    <a href="/logout">로그아웃</a>
-  </div>
+  <script>
+    // Close modal when clicking outside the form
+    window.onclick = function(event) {
+      const modal = document.getElementById('projectModal');
+      if (event.target === modal) {
+        modal.style.display = "none";
+      }
+    }
+  </script>
 </body>
 </html>

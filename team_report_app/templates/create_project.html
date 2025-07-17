@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>프로젝트 등록</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .container {
+      max-width: 700px;
+      margin: auto;
+      padding: 1.5rem;
+      background: #f9f9f9;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      margin-top: 1rem;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.5rem;
+      margin-top: 0.25rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    button {
+      margin-top: 2rem;
+      padding: 0.6rem 1.5rem;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📁 프로젝트 등록</h1>
+    <form method="POST" action="{{ url_for('create_project') }}">
+      <label for="employee_id">글로벌 사번:</label>
+      <input type="text" name="employee_id" id="employee_id" placeholder="예: 30049038" required>
+
+      <label for="solution_name">솔루션 제품명:</label>
+      <input type="text" name="solution_name" id="solution_name" placeholder="예: MES, APM, RMS" required>
+
+      <label for="location">지역:</label>
+      <input type="text" name="location" id="location" placeholder="예: 여수, 울산, 대산" required>
+
+      <label for="company">고객사:</label>
+      <input type="text" name="company" id="company" placeholder="예: LG화학, 한화솔루션" required>
+
+      <label for="project_name">프로젝트명:</label>
+      <input type="text" name="project_name" id="project_name" placeholder="예: 여수 공장 MES 고도화" required>
+
+      <label for="code">코드:</label>
+      <input type="text" name="code" id="code" placeholder="예: Y24-032" required>
+
+      <button type="submit">등록</button>
+    </form>
+  </div>
+</body>
+</html>

@@ -1,68 +1,79 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>주간보고 제출</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    body { font-family: Arial, sans-serif; max-width: 800px; margin: auto; padding: 1rem; }
-    label { display: block; margin-top: 1rem; font-weight: bold; }
-    input, select, textarea { width: 100%; padding: 0.5rem; margin-top: 0.3rem; font-size: 1rem; }
-    button { margin-top: 1.5rem; padding: 0.7rem 1.5rem; font-size: 1rem; }
-    .userinfo { margin-bottom: 1rem; font-size: 1.1rem; }
-    .userinfo strong { width: 70px; display: inline-block; }
-    a.logout-link { display: inline-block; margin-top: 1rem; color: #c0392b; text-decoration: none; }
-    a.logout-link:hover { text-decoration: underline; }
+    .project-section {
+      margin: 1rem 0;
+      padding: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: #f9f9f9;
+    }
   </style>
+  <script>
+    function toggleProjectSections() {
+      const selectedOptions = Array.from(document.getElementById('project_ids').selectedOptions).map(o => o.value);
+      document.querySelectorAll('.project-section').forEach(div => {
+        div.style.display = selectedOptions.includes(div.dataset.projectId) ? 'block' : 'none';
+      });
+    }
+  </script>
 </head>
 <body>
   <h1>주간보고 제출</h1>
+  <form method="POST" action="{{ url_for('submit') }}">
+    <label for="employee_id">글로벌 사번:</label>
+    <input type="text" name="employee_id" id="employee_id" required><br><br>
 
-  <div class="userinfo">
-    <p><strong>이름:</strong> {{ name }}</p>
-    <p><strong>직급:</strong> {{ position }}</p>
-  </div>
-
-  <form action="/submit" method="post">
-    <label>주차:</label>
-    <select name="week" required>
-      {% for week in week_options %}
-        <option value="{{ week }}">{{ week }}</option>
+    <label for="week">주차:</label>
+    <select name="week" id="week">
+      {% for i in range(1, 53) %}
+        <option value="Y25W{{ "%02d"|format(i) }}">Y25W{{ "%02d"|format(i) }}</option>
       {% endfor %}
-    </select>
+    </select><br><br>
 
-    <label>프로젝트 정보:</label>
-    <textarea name="project_summary" rows="2"></textarea>
+    <label for="project_ids">보고할 프로젝트 선택 (다중선택 가능):</label><br>
+    <select id="project_ids" name="project_ids" multiple onchange="toggleProjectSections()" size="5" style="width: 300px;">
+      {% for project in projects %}
+        <option value="{{ project.id }}">{{ project.solution_name }} / {{ project.project_name }} / {{ project.code }}</option>
+      {% endfor %}
+    </select><br><br>
 
-    <label>Key Milestone:</label>
-    <textarea name="milestones" rows="4"></textarea>
+    {% for project in projects %}
+      <div class="project-section" data-project-id="{{ project.id }}" style="display:none;">
+        <h3>{{ project.solution_name }} / {{ project.project_name }} ({{ project.code }})</h3>
+        <input type="hidden" name="project_{{ project.id }}_id" value="{{ project.id }}">
 
-    <label>진행상황:</label>
-    <textarea name="progress" rows="4"></textarea>
+        <label>진행상황:</label><br>
+        <textarea name="project_{{ project.id }}_progress" rows="3" style="width:100%;"></textarea><br>
 
-    <label>특이사항:</label>
-    <textarea name="project_issues" rows="4"></textarea>
+        <label>특이사항:</label><br>
+        <textarea name="project_{{ project.id }}_issues" rows="3" style="width:100%;"></textarea><br>
 
-    <label>영업지원:</label>
-    <textarea name="sales_support" rows="3"></textarea>
+        <label>영업지원 사항:</label><br>
+        <textarea name="project_{{ project.id }}_sales_support" rows="2" style="width:100%;"></textarea><br>
 
-    <label>기타 특이사항:</label>
-    <textarea name="other_notes" rows="3"></textarea>
+        <label>그 외 특이사항:</label><br>
+        <textarea name="project_{{ project.id }}_other_notes" rows="2" style="width:100%;"></textarea><br>
 
-    <label>출장:</label>
-    <textarea name="business_trip" rows="3"></textarea>
+        <label>출장:</label><br>
+        <textarea name="project_{{ project.id }}_business_trip" rows="2" style="width:100%;"></textarea><br>
 
-    <label>외근:</label>
-    <textarea name="external_work" rows="3"></textarea>
+        <label>외근:</label><br>
+        <textarea name="project_{{ project.id }}_external_work" rows="2" style="width:100%;"></textarea><br>
 
-    <label>휴가:</label>
-    <textarea name="vacation" rows="3"></textarea>
+        <label>휴가:</label><br>
+        <textarea name="project_{{ project.id }}_vacation" rows="2" style="width:100%;"></textarea><br>
 
-    <label>휴일근무:</label>
-    <textarea name="weekend_work" rows="3"></textarea>
+        <label>휴일근무:</label><br>
+        <textarea name="project_{{ project.id }}_weekend_work" rows="2" style="width:100%;"></textarea><br>
+      </div>
+    {% endfor %}
 
     <button type="submit">제출</button>
   </form>
-
-  <a class="logout-link" href="{{ url_for('logout') }}">로그아웃</a>
 </body>
 </html>
