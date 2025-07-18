@@ -1,126 +1,111 @@
-# Team Weekly Report Manager
 
-A simple Flask-based web application designed to streamline weekly report submissions, avoid email chaos, and auto-generate reports in Word format — all while keeping a familiar structure your micromanaging boss loves.
+# 📝 Team Weekly Report Management System
 
----
-
-## 🧩 Features
-
-- 🔐 **Login by Employee ID (글로벌 사번)** — Autofill name and position (직급)
-- 📝 **Submit Weekly Reports** — Form replicates your boss's rigid format
-- 📅 **Dashboard** — See all reports in card format (filter by Y25Wxx)
-- 👀 **View Reports** — Click a report card to see full details
-- ✏️ **Edit & Delete Reports** — Update or remove previously submitted reports
-- 📤 **Export to Word** — Boss gets a compiled Word file in the format he loves
+A web-based platform to manage weekly team activity reports with project-based context. Built with Flask and SQLite, it supports multiple users, project assignments, secure login, report submission, and exports.
 
 ---
 
-## 🚀 How to Run
+## 🔧 Features
 
-### 1. Clone this Repository
-```
-git clone https://github.com/yourname/team-report-app.git
-cd team-report-app
-```
-
-### 2. Create Virtual Environment
-```
-python -m venv venv
-.venv\Scripts\activate
-```
-
-### 3. Install Requirements
-```
-pip install -r requirements.txt
-```
-
-### 4. Set Up the Database
-```python
-# In Python shell or a script
-from app import app
-from models import db
-with app.app_context():
-    db.create_all()
-```
-
-### 5. Run the App
-```
-python app.py
-```
-
-Then visit [http://127.0.0.1:5000](http://127.0.0.1:5000)
+- 🔐 **Login System** using employee ID
+- 🗃️ **Project Registration** (Solution Name, Company, Location, Code)
+- 📤 **Weekly Report Submission** with multi-project selection
+- 📊 **Dashboard View** for all reports with project/user context
+- 🔍 **Detailed Report View** per submission
+- ✏️ **Edit & Delete** own reports
+- 📁 **Export Report to Word (.docx)**
+- 🧾 **Admin Page** listing all Users, Projects, and Reports
 
 ---
 
-## 📁 Project Structure
+## 🗂️ Project Structure
 
 ```
 team_report_app/
-├── app.py                 # Main Flask app
-├── models.py              # SQLAlchemy models
-├── templates/
-│   ├── dashboard.html     # Report dashboard
-│   ├── submit.html        # Report submission form
-│   ├── report_detail.html # Report detail view
-│   └── edit_report.html   # Report edit form
-├── static/
-│   └── style.css          # Optional CSS styles
-├── instance/
-│   └── updates.db         # SQLite database
-├── venv/                  # Python virtual environment
-├── requirements.txt
-└── README.md              # This file
+│
+├── app.py                  # Main Flask app logic
+├── models.py               # SQLAlchemy database models
+├── user_data.py            # Static dictionary of employee_id to user info
+├── /templates              # HTML templates (Jinja2)
+│   ├── login.html
+│   ├── dashboard.html
+│   ├── submit.html
+│   ├── create_project.html
+│   ├── view_report.html
+│   ├── edit_report.html
+│   └── admin_data.html
+├── /static                 # CSS files (optional)
+│   └── style.css
+└── /instance/updates.db    # SQLite DB file
 ```
 
 ---
 
-## 📦 Dependencies
+## 🚀 How to Run (Windows)
 
-- Flask
-- Flask_SQLAlchemy
-- python-docx
+1. **Create Virtual Environment**
 
-Install them via:
+```bash
+python -m venv venv
+venv\Scripts\activate
 ```
-pip install Flask Flask_SQLAlchemy python-docx
+
+2. **Install Requirements** (if you add `requirements.txt`)
+
+```bash
+pip install flask flask_sqlalchemy python-docx
+```
+
+3. **Run App**
+
+```bash
+cd team_report_app
+python app.py
+```
+
+App will run at: `http://localhost:5000`
+
+---
+
+## 🧠 Developer Notes
+
+- Login is handled via `session['employee_id']`, validated against `User` table.
+- `user_data.py` contains predefined employee info. Run a one-time script to load them.
+- Projects must be registered before reports can be submitted.
+- Users can select multiple projects and submit a report per project.
+- Each report is tied to a `User`, `Project`, and `Week` (`Y25W##` format).
+- Admin page `/admin/data` lists all Users, Projects, and Updates.
+
+---
+
+## 📥 Useful Snippets
+
+**Register users from user_data.py**:
+
+```python
+from models import db, User
+from app import app
+from user_data import users
+
+with app.app_context():
+    for eid, info in users.items():
+        if not User.query.filter_by(employee_id=eid).first():
+            db.session.add(User(employee_id=eid, name=info['name'], position=info['position']))
+    db.session.commit()
 ```
 
 ---
 
-## 📄 Export Format
+## 🧾 Future Improvements
 
-The exported Word document follows this structure per report:
-
-```
-[주간보고] XXX 차장 – W28
-
-▶ 프로젝트 특이사항
-...내용...
-
-▶ Key Milestone
-...내용...
-
-▶ 진행상황
-...내용...
-
-▶ 특이사항
-...내용...
-
-▶ 영업지원 사항
-...내용...
-
-▶ 그 외 특이사항
-...내용...
-
-▶ 개인 일정
-출장: ...내용...
-외근: ...내용...
-휴가: ...내용...
-휴일근무: ...내용...
-```
+- Role-based access (admin vs normal users)
+- Search/filter by project, week, or user
+- PDF export (currently Word only)
+- Better UI (modals for project creation, validation)
 
 ---
 
-## ✍️ Author
+## 👤 Author
 
-Built with ❤️ by your overworked team member.
+- Internal tool for efficient team report management
+- Designed by [Your Name or Team]

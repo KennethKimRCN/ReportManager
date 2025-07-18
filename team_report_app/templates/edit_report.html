@@ -1,81 +1,150 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <title>주간보고 수정</title>
+  <meta charset="UTF-8">
+  <title>보고서 수정</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <style>
-    body { font-family: Arial, sans-serif; max-width: 800px; margin: auto; padding: 1rem; }
-    label { font-weight: bold; display: block; margin-top: 1rem; }
-    textarea, select, input[type="text"] { width: 100%; padding: 0.5rem; margin-top: 0.2rem; font-size: 1rem; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+      background: #f5f5f7;
+      margin: 0;
+      padding: 2rem;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.05);
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 1.5rem;
+    }
+
+    label {
+      font-weight: 600;
+      display: block;
+      margin-top: 1.2rem;
+      margin-bottom: 0.4rem;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      font-size: 1rem;
+      padding: 0.6rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .project-block {
+      border-top: 1px solid #ddd;
+      padding-top: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .project-title {
+      font-weight: bold;
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      color: #007aff;
+    }
+
+    .btn-group {
+      margin-top: 2rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+    }
+
     button {
-      margin-top: 1rem;
-      padding: 0.5rem 1rem;
-      background: #3498db;
-      color: white;
+      font-size: 1rem;
+      padding: 0.6rem 1.2rem;
       border: none;
-      border-radius: 4px;
+      border-radius: 8px;
       cursor: pointer;
     }
-    button:hover { background: #2980b9; }
-    .info { margin-top: 0.5rem; color: #555; }
-    .cancel-button {
-      background: #ccc;
-      color: #333;
-      margin-left: 1rem;
+
+    .btn-primary {
+      background-color: #007aff;
+      color: white;
     }
-    .cancel-button:hover {
-      background: #aaa;
+
+    .btn-secondary {
+      background-color: #e5e5ea;
+      color: black;
+    }
+
+    .section-header {
+      margin-top: 2rem;
+      font-weight: bold;
+      font-size: 1.2rem;
+      border-bottom: 2px solid #eee;
+      padding-bottom: 0.5rem;
+    }
+
+    select:disabled {
+      background-color: #f0f0f0;
     }
   </style>
 </head>
 <body>
-  <h1>주간보고 수정</h1>
-  <form method="post">
-    <label>이름</label>
-    <input type="text" name="name" value="{{ update.name }}" readonly>
+  <div class="container">
+    <h1>보고서 수정</h1>
+    <form method="POST">
+      <label for="week">주차</label>
+      <select name="week" id="week" required>
+        {% for wk in weeks %}
+          <option value="{{ wk }}" {% if wk == update.week %}selected{% endif %}>{{ wk }}</option>
+        {% endfor %}
+      </select>
 
-    <label>직급</label>
-    <input type="text" name="position" value="{{ update.position }}" readonly>
+      {% for project_data in update.projects %}
+      <div class="project-block">
+        <div class="project-title">{{ project_data.project.project_name }} ({{ project_data.project.code }})</div>
 
-    <label>주차</label>
-    <select name="week" required>
-      {% for w in week_options %}
-        <option value="{{ w }}" {% if update.week == w %}selected{% endif %}>{{ w }}</option>
+        <label>진행상황</label>
+        <textarea name="project_{{ project_data.project_id }}_progress">{{ project_data.progress }}</textarea>
+
+        <label>특이사항</label>
+        <textarea name="project_{{ project_data.project_id }}_project_issues">{{ project_data.project_issues }}</textarea>
+
+        <label>영업지원 사항</label>
+        <textarea name="project_{{ project_data.project_id }}_sales_support">{{ project_data.sales_support }}</textarea>
+
+        <label>그 외 특이사항</label>
+        <textarea name="project_{{ project_data.project_id }}_other_notes">{{ project_data.other_notes }}</textarea>
+      </div>
       {% endfor %}
-    </select>
 
-    <label>프로젝트 특이사항</label>
-    <textarea name="project_summary" rows="3">{{ update.project_summary }}</textarea>
+      <div class="section-header">공통 일정</div>
 
-    <label>Key Milestone</label>
-    <textarea name="milestones" rows="3">{{ update.milestones }}</textarea>
+      <label for="business_trip">출장</label>
+      <input type="text" name="business_trip" id="business_trip" value="{{ update.business_trip or '' }}">
 
-    <label>진행상황</label>
-    <textarea name="progress" rows="3">{{ update.progress }}</textarea>
+      <label for="external_work">외근</label>
+      <input type="text" name="external_work" id="external_work" value="{{ update.external_work or '' }}">
 
-    <label>특이사항 (일정변경, Risk, 예상일정 등)</label>
-    <textarea name="project_issues" rows="3">{{ update.project_issues }}</textarea>
+      <label for="vacation">휴가</label>
+      <input type="text" name="vacation" id="vacation" value="{{ update.vacation or '' }}">
 
-    <label>영업지원 사항</label>
-    <textarea name="sales_support" rows="3">{{ update.sales_support }}</textarea>
+      <label for="weekend_work">휴일 근무</label>
+      <input type="text" name="weekend_work" id="weekend_work" value="{{ update.weekend_work or '' }}">
 
-    <label>그 외 특이사항</label>
-    <textarea name="other_notes" rows="3">{{ update.other_notes }}</textarea>
-
-    <label>개인 일정 - 출장</label>
-    <textarea name="business_trip" rows="2">{{ update.business_trip }}</textarea>
-
-    <label>개인 일정 - 외근</label>
-    <textarea name="external_work" rows="2">{{ update.external_work }}</textarea>
-
-    <label>개인 일정 - 휴가</label>
-    <textarea name="vacation" rows="2">{{ update.vacation }}</textarea>
-
-    <label>개인 일정 - 휴일근무</label>
-    <textarea name="weekend_work" rows="2">{{ update.weekend_work }}</textarea>
-
-    <button type="submit">수정하기</button>
-    <a href="{{ url_for('report_detail', report_id=update.id) }}" class="cancel-button" style="display:inline-block; padding:0.5rem 1rem; text-decoration:none;">취소</a>
-  </form>
+      <div class="btn-group">
+        <a href="{{ url_for('dashboard') }}" class="btn-secondary" style="text-decoration:none;padding:0.6rem 1.2rem;">뒤로가기</a>
+        <button type="submit" class="btn-primary">저장하기</button>
+      </div>
+    </form>
+  </div>
 </body>
 </html>
