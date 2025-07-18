@@ -1,3 +1,101 @@
 {% extends 'base.html' %}
-{% block title %}Create Report{% endblock %}
-{% block content %}<h1>Create Report</h1>{% endblock %}
+{% block title %}보고서 작성{% endblock %}
+
+{% block content %}
+<h2>📝 주간 보고서 작성</h2>
+
+<form method="post" action="{{ url_for('report.submit_report') }}">
+  <p><strong>이름:</strong> {{ user.name }}</p>
+  <p><strong>직급:</strong> {{ user.position }}</p>
+
+  <label for="week">주차 선택:</label>
+  <select name="week" id="week" required>
+    {% for w in weeks %}
+      <option value="{{ w }}">{{ w }}</option>
+    {% endfor %}
+  </select>
+
+  <hr>
+
+  <div id="project-section-container">
+    <!-- 프로젝트 섹션이 여기에 동적으로 추가됩니다 -->
+  </div>
+
+  <button type="button" onclick="addProjectSection()">+ 프로젝트 추가</button>
+
+  <hr>
+
+  <h3>📅 개인 일정</h3>
+  <div id="schedule-container">
+    <!-- 개인 일정이 여기에 동적으로 추가됩니다 -->
+  </div>
+  <button type="button" onclick="addSchedule()">+ 일정 추가</button>
+
+  <br><br>
+  <button type="submit">제출</button>
+  <a href="{{ url_for('dashboard.dashboard') }}"><button type="button">취소</button></a>
+</form>
+
+<script>
+let projectCount = 0;
+let scheduleCount = 0;
+
+function addProjectSection() {
+  const projectList = {{ projects|tojson }};
+  const container = document.getElementById("project-section-container");
+
+  const div = document.createElement("div");
+  div.classList.add("project-section");
+  div.innerHTML = `
+    <hr>
+    <label>프로젝트 선택</label>
+    <select name="projects[${projectCount}][project_id]" required>
+      ${projectList.map(p => `<option value="${p.id}">${p.project_name} (${p.location})</option>`).join("")}
+    </select><br>
+
+    <label>진행상황 *</label><br>
+    <textarea name="projects[${projectCount}][progress]" required></textarea><br>
+
+    <label>특이사항</label><br>
+    <textarea name="projects[${projectCount}][project_issues]"></textarea><br>
+
+    <label>영업지원 사항</label><br>
+    <textarea name="projects[${projectCount}][sales_support]"></textarea><br>
+
+    <label>그 외 특이사항</label><br>
+    <textarea name="projects[${projectCount}][other_note]"></textarea><br>
+
+    <button type="button" onclick="this.parentElement.remove()">❌ 삭제</button>
+    <hr>
+  `;
+  container.appendChild(div);
+  projectCount++;
+}
+
+function addSchedule() {
+  const container = document.getElementById("schedule-container");
+
+  const div = document.createElement("div");
+  div.innerHTML = `
+    <label>구분</label>
+    <select name="schedules[${scheduleCount}][category]">
+      <option value="출장">출장</option>
+      <option value="외근">외근</option>
+      <option value="휴가">휴가</option>
+      <option value="휴일근무">휴일근무</option>
+    </select><br>
+
+    <label>이름</label><input name="schedules[${scheduleCount}][person]" required><br>
+    <label>장소</label><input name="schedules[${scheduleCount}][location]" required><br>
+    <label>시작일</label><input type="date" name="schedules[${scheduleCount}][start_date]" required><br>
+    <label>종료일</label><input type="date" name="schedules[${scheduleCount}][end_date]" required><br>
+    <label>비고</label><textarea name="schedules[${scheduleCount}][description]"></textarea><br>
+
+    <button type="button" onclick="this.parentElement.remove()">❌ 삭제</button>
+    <hr>
+  `;
+  container.appendChild(div);
+  scheduleCount++;
+}
+</script>
+{% endblock %}

@@ -1,3 +1,45 @@
 {% extends 'base.html' %}
-{% block title %}Create Project{% endblock %}
-{% block content %}<h1>Create Project</h1>{% endblock %}
+{% block title %}프로젝트 등록{% endblock %}
+
+{% block content %}
+<h2>📁 프로젝트 등록</h2>
+
+<form method="post">
+  <label>프로젝트명</label><br>
+  <input type="text" name="project_name" required><br><br>
+
+  <label>솔루션 아이템</label><br>
+  <input type="text" name="solution_name" required><br><br>
+
+  <label>회사명</label><br>
+  <input type="text" name="company" required><br><br>
+
+  <label>지역</label><br>
+  <input type="text" name="location" required><br><br>
+
+  <label>프로젝트 코드</label><br>
+  <input type="text" name="code" required><br><br>
+
+  <label>담당자 (복수 선택 가능)</label><br>
+  <select name="assignees" multiple size="6" required>
+    {% for user in users %}
+      <option value="{{ user.id }}">{{ user.name }} ({{ user.position }})</option>
+    {% endfor %}
+  </select><br><br>
+
+  <button type="submit">프로젝트 등록</button>
+  <a href="{{ url_for('dashboard.dashboard') }}"><button type="button">취소</button></a>
+</form>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <ul>
+    {% for category, message in messages %}
+      <li style="color: {% if category == 'danger' %}red{% elif category == 'success' %}green{% else %}black{% endif %};">
+        {{ message }}
+      </li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+{% endwith %}
+{% endblock %}

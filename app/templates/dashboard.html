@@ -1,3 +1,38 @@
 {% extends 'base.html' %}
 {% block title %}Dashboard{% endblock %}
-{% block content %}<h1>Dashboard</h1>{% endblock %}
+
+{% block content %}
+<h2>📋 주간 보고 대시보드</h2>
+
+<form method="get" style="margin-bottom: 1rem;">
+  <input type="text" name="name" placeholder="이름" value="{{ filters.name }}">
+  <input type="text" name="project" placeholder="프로젝트명" value="{{ filters.project }}">
+  <input type="text" name="location" placeholder="지역" value="{{ filters.location }}">
+  <input type="text" name="week" placeholder="주차 (예: Y25W30)" value="{{ filters.week }}">
+  <button type="submit">검색</button>
+</form>
+
+<div style="margin-bottom: 1rem;">
+  <a href="{{ url_for('report.create_report') }}"><button>+ 보고서 작성</button></a>
+  <a href="{{ url_for('project.create_project') }}"><button>+ 프로젝트 등록</button></a>
+
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+  {% for update in updates %}
+    <div style="border: 1px solid #ccc; padding: 1rem; border-radius: 8px; width: 300px; background: #fafafa;">
+      <strong>{{ update.user.name }} ({{ update.user.position }})</strong><br>
+      <span>🗂 {{ update.project.project_name }}</span><br>
+      <span>📍 {{ update.project.location }}</span><br>
+      <span>📅 {{ update.week }}</span><br><br>
+      <a href="{{ url_for('report.view_report', update_id=update.id) }}">➡ 상세 보기</a>
+    </div>
+  {% endfor %}
+</div>
+
+<script>
+function openProjectPopup() {
+  alert("💡 프로젝트 등록 팝업은 아직 연결되지 않았습니다.");
+}
+</script>
+{% endblock %}
