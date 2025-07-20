@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>📄 주간보고 작성</h2>
+<form method="POST">
+  {% for project in assigned_projects %}
+    <h3>🔧 {{ project.project_name }}</h3>
+    <textarea name="project_{{ project.id }}_progress" placeholder="진행상황"></textarea>
+    <textarea name="project_{{ project.id }}_issue" placeholder="특이사항"></textarea>
+    <textarea name="project_{{ project.id }}_sales_support" placeholder="영업지원사항"></textarea>
+    <textarea name="project_{{ project.id }}_other_note" placeholder="기타"></textarea>
+  {% endfor %}
+
+  <h3>🧍 개인 일정</h3>
+  {% for i in range(1,6) %}
+    <div>
+      <select name="schedule_{{i}}_category">
+        <option value="">--선택--</option>
+        <option>출장</option><option>외근</option><option>휴가</option><option>휴일근무</option>
+      </select>
+      <input type="text" name="schedule_{{i}}_person" placeholder="이름">
+      <input type="text" name="schedule_{{i}}_location" placeholder="장소">
+      <input type="date" name="schedule_{{i}}_start_date">
+      <input type="date" name="schedule_{{i}}_end_date">
+      <textarea name="schedule_{{i}}_description" placeholder="설명"></textarea>
+    </div>
+  {% endfor %}
+
+  <button name="status" value="Draft">임시저장</button>
+  <button name="status" value="Submitted">제출</button>
+</form>
+{% endblock %}

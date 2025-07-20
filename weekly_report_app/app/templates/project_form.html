@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>📌 프로젝트 등록</h2>
+<form method="POST">
+  <label>솔루션명 <input type="text" name="solution_name" required></label>
+  <label>고객사 <input type="text" name="company" required></label>
+  <label>설치 장소 <input type="text" name="location" required></label>
+  <label>프로젝트명 <input type="text" name="project_name" required></label>
+  <label>코드 <input type="text" name="code" required></label>
+
+  <label>상태
+    <select name="status">
+      <option>Pre-Sales</option>
+      <option selected>Ongoing</option>
+      <option>Maintenance</option>
+      <option>Completed</option>
+    </select>
+  </label>
+
+  <label>태그</label>
+  {% for tag in tags %}
+    <label><input type="checkbox" name="tags" value="{{ tag.id }}"> {{ tag.name }}</label>
+  {% endfor %}
+
+  <label>담당자</label>
+  {% for user in users %}
+    <label><input type="checkbox" name="assignees" value="{{ user.id }}"> {{ user.name }} ({{ user.position }})</label>
+  {% endfor %}
+
+  <button type="submit">등록</button>
+</form>
+{% endblock %}

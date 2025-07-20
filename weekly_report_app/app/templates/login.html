@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="login-box">
+  <h2>Login</h2>
+  <form method="POST">
+    <label for="employee_id">Employee ID</label>
+    <input type="text" name="employee_id" required>
+    <button type="submit">Login</button>
+  </form>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="error">{{ messages[0] }}</div>
+    {% endif %}
+  {% endwith %}
+</div>
+{% endblock %}

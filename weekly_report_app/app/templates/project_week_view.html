@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>📊 프로젝트 주간 집계 보고서</h2>
+<h3>{{ project.project_name }} ({{ week }})</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>작성자</th><th>진행상황</th><th>특이사항</th><th>영업지원</th><th>기타</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for update in updates %}
+      <tr>
+        <td>{{ update.report.user.name }}</td>
+        <td><pre>{{ update.progress }}</pre></td>
+        <td><pre>{{ update.issue }}</pre></td>
+        <td><pre>{{ update.sales_support }}</pre></td>
+        <td><pre>{{ update.other_note }}</pre></td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

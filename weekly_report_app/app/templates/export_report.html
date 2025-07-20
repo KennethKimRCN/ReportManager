@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 14px; }
+    h1, h2, h3 { color: #333; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    td, th { border: 1px solid #ccc; padding: 8px; }
+    pre { white-space: pre-wrap; word-wrap: break-word; }
+  </style>
+</head>
+<body>
+<h1>주간보고서</h1>
+<p>작성자: {{ report.user.name }} | 주차: {{ report.week_start }} ~ {{ report.week_end }}</p>
+<p>상태: {{ report.status }}</p>
+
+{% for update in report.project_updates %}
+  <h3>{{ update.project.project_name }}</h3>
+  <strong>진행상황</strong><pre>{{ update.progress }}</pre>
+  <strong>특이사항</strong><pre>{{ update.issue }}</pre>
+  <strong>영업지원</strong><pre>{{ update.sales_support }}</pre>
+  <strong>기타</strong><pre>{{ update.other_note }}</pre>
+{% endfor %}
+
+<h2>🧍 개인 일정</h2>
+<table>
+  <thead><tr><th>구분</th><th>이름</th><th>장소</th><th>기간</th><th>내용</th></tr></thead>
+  <tbody>
+    {% for ps in report.personal_schedules %}
+      <tr>
+        <td>{{ ps.category }}</td>
+        <td>{{ ps.person }}</td>
+        <td>{{ ps.location }}</td>
+        <td>{{ ps.start_date }} ~ {{ ps.end_date }}</td>
+        <td>{{ ps.description }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</body>
+</html>

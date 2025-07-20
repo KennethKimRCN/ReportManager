@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>주간보고 시스템</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header>
+    <h1>📘 주간보고 시스템</h1>
+    <nav>
+      {% if session.get('user_id') %}
+        <a href="{{ url_for('dashboard.index') }}">대시보드</a>
+        <a href="{{ url_for('report.create_report') }}">보고서 작성</a>
+        <a href="{{ url_for('project.create_project') }}">프로젝트 등록</a>
+        <a href="{{ url_for('auth.logout') }}">로그아웃</a>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}">로그인</a>
+      {% endif %}
+    </nav>
+  </header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>📄 주간보고 상세보기</h2>
+<p>작성자: {{ report.user.name }} / 기간: {{ report.week_start }} ~ {{ report.week_end }}</p>
+<p>상태: {{ report.status }}</p>
+
+{% for update in report.project_updates %}
+  <h3>🔧 {{ update.project.project_name }}</h3>
+  {% set diff = diffs.get(update.project.id) %}
+  <div>
+    <strong>진행상황</strong><br>
+    <pre>{{ update.progress }}</pre>
+    {% if diff and diff.progress %}
+      <details><summary>변경됨</summary>
+      <b>이전:</b><pre>{{ diff.progress.before }}</pre>
+      </details>
+    {% endif %}
+  </div>
+  <div>
+    <strong>특이사항</strong><br>
+    <pre>{{ update.issue }}</pre>
+    {% if diff and diff.issue %}
+      <details><summary>변경됨</summary>
+      <b>이전:</b><pre>{{ diff.issue.before }}</pre>
+      </details>
+    {% endif %}
+  </div>
+  <!-- Repeat for sales_support and other_note -->
+{% endfor %}
+{% endblock %}

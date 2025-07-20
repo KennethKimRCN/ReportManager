@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+
+# Environment
+env/
+venv/
+.venv/
+ENV/
+*.env
+.env.*
+
+# Flask / Migrations
+instance/
+*.sqlite3
+migrations/
+
+# VSCode & IDE
+.vscode/
+.idea/
+*.swp
+
+# Bytecode & logs
+*.log
+
+# Exported reports
+*.pdf
+*.docx
+exports/
