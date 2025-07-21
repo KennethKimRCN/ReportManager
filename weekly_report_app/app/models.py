@@ -54,10 +54,7 @@ class Project(db.Model):
     location = db.Column(db.String(100), nullable=False)
     project_name = db.Column(db.String(100), nullable=False)
     code = db.Column(db.String(50), unique=True, nullable=False, index=True)
-    status = db.Column(
-        db.Enum('Pre-Sales', 'Ongoing', 'Maintenance', 'Completed', name='project_status'),
-        default='Ongoing'
-    )
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -84,7 +81,7 @@ class ProjectSnapshot(db.Model):
     location = db.Column(db.String(100), nullable=False)
     project_name = db.Column(db.String(100), nullable=False)
     code = db.Column(db.String(50), nullable=False)
-    status = db.Column(db.String(50), nullable=False)
+    #status = db.Column(db.String(50), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     project = db.relationship('Project', back_populates='snapshots')
@@ -132,6 +129,8 @@ class ProjectUpdate(db.Model):
     sales_support = db.Column(db.Text)
     other_note = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 
     report = db.relationship('Report', back_populates='project_updates')
     project = db.relationship('Project', back_populates='project_updates')
@@ -153,6 +152,8 @@ class SalesSupport(db.Model):
     content = db.Column(db.Text, nullable=False)
     companion = db.Column(db.String(100))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
 
     report = db.relationship('Report', back_populates='sales_supports')
 
@@ -162,7 +163,7 @@ class OtherNote(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     report_id = db.Column(db.Integer, db.ForeignKey('report.id'), nullable=False)
-    note = db.Column(db.Text, nullable=False)
+    note = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     report = db.relationship('Report', back_populates='other_notes_entries')
@@ -177,16 +178,25 @@ class PersonalSchedule(db.Model):
         db.Enum('출장', '외근', '휴가', '휴일근무', name='schedule_category'),
         nullable=False
     )
-    person = db.Column(db.String(100), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
     location = db.Column(db.String(100), nullable=False)
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
-    start_time = db.Column(db.Time)
-    end_time = db.Column(db.Time)
     description = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     report = db.relationship('Report', back_populates='personal_schedules')
+    companions = db.relationship('Companion', back_populates='personal_schedule', cascade='all, delete-orphan')
+
+class Companion(db.Model):
+    __tablename__ = 'companion'
+
+    id = db.Column(db.Integer, primary_key=True)
+    personal_schedule_id = db.Column(db.Integer, db.ForeignKey('personal_schedule.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+
+    personal_schedule = db.relationship('PersonalSchedule', back_populates='companions')
 
 
 class ProjectChangeLog(db.Model):

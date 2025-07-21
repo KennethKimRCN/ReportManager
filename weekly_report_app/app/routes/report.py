@@ -1,18 +1,23 @@
-from flask import Blueprint, render_template, session, redirect, url_for, request, flash
-from datetime import timedelta
+from flask import Blueprint, render_template, session, redirect, url_for, request, flash, current_app
+from datetime import timedelta, datetime
 from app import db
-from app.models import Report, Project, ProjectUpdate, PersonalSchedule
+from app.models import Report, Project, ProjectUpdate, PersonalSchedule, User
 from app.utils.date_utils import get_sunday_of_current_week
 from app.utils.snapshot_utils import ensure_snapshot_for_project
 from app.utils.diff_utils import compare_project_updates
-from datetime import datetime
 
 bp = Blueprint('report', __name__, url_prefix='/report')
 
+# 🔧 Helper to serialize project for JSON
+def serialize_project(project):
+    return {
+        'id': project.id,
+        'project_name': project.project_name,
+        'solution_name': project.solution_name
+    }
 
 @bp.route('/edit', methods=['GET', 'POST'])
 def edit_report():
-    # Redirect if not logged in
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
 
@@ -20,68 +25,63 @@ def edit_report():
     week_start = get_sunday_of_current_week()
     week_end = week_start + timedelta(days=6)
 
-    # Fetch or create the report for current week
     report = Report.query.filter_by(user_id=user_id, week_start=week_start).first()
     if not report:
         report = Report(user_id=user_id, week_start=week_start, week_end=week_end, status='Draft')
         db.session.add(report)
         db.session.commit()
 
+    user = User.query.get(user_id)
+    assigned_projects = user.assigned_projects
+    all_projects = Project.query.order_by(Project.solution_name).all()
+
     if request.method == 'POST':
-        status = request.form.get('status')  # Draft or Submitted
+        status = request.form.get('status')
         report.status = status
         report.week_end = week_end
         report.submitted_at = datetime.utcnow() if status == 'Submitted' else None
         db.session.commit()
 
-        # List only projects assigned to user
-        assigned_projects = Project.query \
-            .join(Project.assignees) \
-            .filter_by(id=user_id) \
-            .all()
-
-        # Ensure snapshots for assigned projects
-        for project in assigned_projects:
-            ensure_snapshot_for_project(project.id)
-
-        # Remove existing project updates for this report (optional: depends on your update strategy)
         ProjectUpdate.query.filter_by(report_id=report.id).delete()
+        project_ids = request.form.getlist('project_id[]')
+        progress_list = request.form.getlist('progress[]')
+        issue_list = request.form.getlist('issue[]')
+        sales_list = request.form.getlist('sales_support[]')
+        other_list = request.form.getlist('other_note[]')
 
-        # Save project updates
-        for project in assigned_projects:
-            prefix = f"project_{project.id}_"
-            progress = request.form.get(prefix + "progress")
-            issue = request.form.get(prefix + "issue")
-            sales = request.form.get(prefix + "sales_support")
-            other = request.form.get(prefix + "other_note")
-
-            if progress and progress.strip():
+        for i in range(len(project_ids)):
+            progress = progress_list[i].strip()
+            if progress:  # Required field
                 update = ProjectUpdate(
                     report_id=report.id,
-                    project_id=project.id,
+                    project_id=int(project_ids[i]),
                     progress=progress,
-                    issue=issue,
-                    sales_support=sales,
-                    other_note=other
+                    issue=issue_list[i],
+                    sales_support=sales_list[i],
+                    other_note=other_list[i]
                 )
                 db.session.add(update)
 
-        # Remove existing personal schedules (optional: depends on update strategy)
         PersonalSchedule.query.filter_by(report_id=report.id).delete()
+        categories = request.form.getlist('schedule_category[]')
+        titles = request.form.getlist('schedule_title[]')
+        locations = request.form.getlist('schedule_location[]')
+        start_dates = request.form.getlist('schedule_start_date[]')
+        end_dates = request.form.getlist('schedule_end_date[]')
+        descriptions = request.form.getlist('schedule_description[]')
 
-        # Save personal schedules
-        for i in range(1, 6):
-            category = request.form.get(f"schedule_{i}_category")
-            person = request.form.get(f"schedule_{i}_person")
-            if category and person:
+        for category, title, location, start_date, end_date, description in zip(
+            categories, titles, locations, start_dates, end_dates, descriptions
+        ):
+            if all([category.strip(), title.strip(), location.strip(), start_date.strip(), end_date.strip()]):
                 ps = PersonalSchedule(
                     report_id=report.id,
                     category=category,
-                    person=person,
-                    location=request.form.get(f"schedule_{i}_location"),
-                    start_date=request.form.get(f"schedule_{i}_start_date"),
-                    end_date=request.form.get(f"schedule_{i}_end_date"),
-                    description=request.form.get(f"schedule_{i}_description")
+                    title=title,
+                    location=location,
+                    start_date=datetime.strptime(start_date, "%Y-%m-%d").date(),
+                    end_date=datetime.strptime(end_date, "%Y-%m-%d").date(),
+                    description=description or ''
                 )
                 db.session.add(ps)
 
@@ -89,8 +89,14 @@ def edit_report():
         flash("보고서가 저장되었습니다.")
         return redirect(url_for('dashboard.index'))
 
-    # GET request: render form with existing report data
-    return render_template('create_report.html', report=report, edit_mode=True)
+    return render_template(
+        'create_report.html',
+        report=report,
+        assigned_projects=[serialize_project(p) for p in assigned_projects],
+        all_projects=[serialize_project(p) for p in all_projects],
+        edit_mode=True
+    )
+
 
 
 @bp.route('/view/<int:report_id>')
@@ -100,7 +106,6 @@ def view_report(report_id):
 
     report = Report.query.get_or_404(report_id)
 
-    # Permission check (manager or owner)
     if not session.get('is_manager') and report.user_id != session['user_id']:
         flash('접근 권한이 없습니다.')
         return redirect(url_for('dashboard.index'))

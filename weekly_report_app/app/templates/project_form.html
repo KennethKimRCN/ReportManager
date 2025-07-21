@@ -8,15 +8,6 @@
   <label>프로젝트명 <input type="text" name="project_name" required></label>
   <label>코드 <input type="text" name="code" required></label>
 
-  <label>상태
-    <select name="status">
-      <option>Pre-Sales</option>
-      <option selected>Ongoing</option>
-      <option>Maintenance</option>
-      <option>Completed</option>
-    </select>
-  </label>
-
   <label>태그</label>
   {% for tag in tags %}
     <label><input type="checkbox" name="tags" value="{{ tag.id }}"> {{ tag.name }}</label>

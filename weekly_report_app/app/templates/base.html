@@ -8,7 +8,14 @@
 </head>
 <body>
   <header>
-    <h1>📘 주간보고 시스템</h1>
+    <h1>
+      📘 주간보고 시스템
+      {% if session.get('user_name') and session.get('employee_id') %}
+        <span style="font-size: 0.6em; margin-left: 10px;">
+          {{ session['user_name'] }} (글로벌 사번: {{ session['employee_id'] }})
+        </span>
+      {% endif %}
+    </h1>
     <nav>
       {% if session.get('user_id') %}
         <a href="{{ url_for('dashboard.index') }}">대시보드</a>

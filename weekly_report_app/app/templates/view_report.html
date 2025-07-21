@@ -1,30 +1,103 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>📄 주간보고 상세보기</h2>
-<p>작성자: {{ report.user.name }} / 기간: {{ report.week_start }} ~ {{ report.week_end }}</p>
-<p>상태: {{ report.status }}</p>
 
-{% for update in report.project_updates %}
-  <h3>🔧 {{ update.project.project_name }}</h3>
-  {% set diff = diffs.get(update.project.id) %}
-  <div>
-    <strong>진행상황</strong><br>
-    <pre>{{ update.progress }}</pre>
-    {% if diff and diff.progress %}
-      <details><summary>변경됨</summary>
-      <b>이전:</b><pre>{{ diff.progress.before }}</pre>
-      </details>
-    {% endif %}
-  </div>
-  <div>
-    <strong>특이사항</strong><br>
-    <pre>{{ update.issue }}</pre>
-    {% if diff and diff.issue %}
-      <details><summary>변경됨</summary>
-      <b>이전:</b><pre>{{ diff.issue.before }}</pre>
-      </details>
-    {% endif %}
-  </div>
-  <!-- Repeat for sales_support and other_note -->
-{% endfor %}
+<h2>📄 주간보고 상세보기</h2>
+
+<section>
+  <h3>🗓️ 보고 주간</h3>
+  <p>{{ report.week_start.strftime('%Y-%m-%d') }} ~ {{ report.week_end.strftime('%m-%d') }}</p>
+  <p>제출 상태: <strong>{{ report.status }}</strong></p>
+  {% if report.submitted_at %}
+    <p>제출일시: {{ report.submitted_at.strftime('%Y-%m-%d %H:%M') }}</p>
+  {% endif %}
+</section>
+
+<hr>
+
+<section>
+  <h3>📁 프로젝트 업데이트</h3>
+
+  {% if report.project_updates %}
+    {% for update in report.project_updates %}
+      <div class="project-block">
+        <h4>{{ update.project.solution_name }} - {{ update.project.project_name }}</h4>
+
+        <div>
+          <strong>진행상황</strong>
+          <pre>{{ update.progress or '-' }}</pre>
+        </div>
+
+        {% if update.issue %}
+        <div>
+          <strong>특이사항</strong>
+          <pre>{{ update.issue }}</pre>
+        </div>
+        {% endif %}
+
+        {% if update.sales_support %}
+        <div>
+          <strong>영업지원 사항</strong>
+          <pre>{{ update.sales_support }}</pre>
+        </div>
+        {% endif %}
+
+        {% if update.other_note %}
+        <div>
+          <strong>그 외 특이사항</strong>
+          <pre>{{ update.other_note }}</pre>
+        </div>
+        {% endif %}
+
+        {% if diffs and update.project_id in diffs %}
+          <details style="margin-top: 1rem;">
+            <summary>📌 이전 주간과 변경사항 비교</summary>
+            <pre>{{ diffs[update.project_id] }}</pre>
+          </details>
+        {% endif %}
+      </div>
+      <hr>
+    {% endfor %}
+  {% else %}
+    <p style="color: var(--color-muted);">등록된 프로젝트 업데이트가 없습니다.</p>
+  {% endif %}
+</section>
+
+<hr>
+
+<section>
+  <h3>📆 개인 일정</h3>
+
+  {% if report.personal_schedules %}
+    <table>
+      <thead>
+        <tr>
+          <th>구분</th>
+          <th>제목</th>
+          <th>장소</th>
+          <th>시작일</th>
+          <th>종료일</th>
+          <th>비고</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in report.personal_schedules %}
+          <tr>
+            <td>{{ s.category }}</td>
+            <td>{{ s.title }}</td>
+            <td>{{ s.location }}</td>
+            <td>{{ s.start_date.strftime('%Y-%m-%d') }}</td>
+            <td>{{ s.end_date.strftime('%Y-%m-%d') }}</td>
+            <td>{{ s.description or '-' }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color: var(--color-muted);">등록된 개인 일정이 없습니다.</p>
+  {% endif %}
+</section>
+
+<br>
+<a href="{{ url_for('dashboard.index') }}"><button>← 대시보드로 돌아가기</button></a>
+
 {% endblock %}

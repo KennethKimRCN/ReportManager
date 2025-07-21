@@ -21,7 +21,7 @@ def create_project():
         location = request.form.get('location')
         project_name = request.form.get('project_name')
         code = request.form.get('code')
-        status = request.form.get('status')
+        #status = request.form.get('status')
         tag_ids = request.form.getlist('tags')
         assignee_ids = request.form.getlist('assignees')
 
@@ -32,7 +32,7 @@ def create_project():
             location=location,
             project_name=project_name,
             code=code,
-            status=status,
+            #status=status,
         )
 
         # Assign tags and users
@@ -52,7 +52,7 @@ def create_project():
             location=location,
             project_name=project_name,
             code=code,
-            status=status
+            #status=status
         )
         db.session.add(snapshot)
         db.session.commit()

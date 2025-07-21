@@ -14,6 +14,8 @@ def login():
         if user:
             session['user_id'] = user.id
             session['is_manager'] = user.is_manager
+            session['user_name'] = user.name
+            session['employee_id'] = user.employee_id
             return redirect(url_for('dashboard.index'))
         else:
             flash('Invalid Employee ID')

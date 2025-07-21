@@ -1,31 +1,160 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>📄 주간보고 작성</h2>
-<form method="POST">
-  {% for project in assigned_projects %}
-    <h3>🔧 {{ project.project_name }}</h3>
-    <textarea name="project_{{ project.id }}_progress" placeholder="진행상황"></textarea>
-    <textarea name="project_{{ project.id }}_issue" placeholder="특이사항"></textarea>
-    <textarea name="project_{{ project.id }}_sales_support" placeholder="영업지원사항"></textarea>
-    <textarea name="project_{{ project.id }}_other_note" placeholder="기타"></textarea>
-  {% endfor %}
+<h2>📘 주간보고 작성</h2>
 
-  <h3>🧍 개인 일정</h3>
-  {% for i in range(1,6) %}
-    <div>
-      <select name="schedule_{{i}}_category">
-        <option value="">--선택--</option>
-        <option>출장</option><option>외근</option><option>휴가</option><option>휴일근무</option>
-      </select>
-      <input type="text" name="schedule_{{i}}_person" placeholder="이름">
-      <input type="text" name="schedule_{{i}}_location" placeholder="장소">
-      <input type="date" name="schedule_{{i}}_start_date">
-      <input type="date" name="schedule_{{i}}_end_date">
-      <textarea name="schedule_{{i}}_description" placeholder="설명"></textarea>
+<form method="post" action="{{ url_for('report.edit_report') }}">
+  <!-- Hidden ID -->
+  <input type="hidden" name="report_id" value="{{ report.id }}">
+
+  <!-- 🔹 Project Section -->
+  <section>
+    <h3>📁 프로젝트 업데이트</h3>
+    <button type="button" onclick="openProjectModal()">+ 프로젝트 추가</button>
+    <div id="project-list">
+      <!-- Populated dynamically -->
     </div>
-  {% endfor %}
+  </section>
 
-  <button name="status" value="Draft">임시저장</button>
-  <button name="status" value="Submitted">제출</button>
+  <!-- 🔹 Personal Schedule Section -->
+  <section style="margin-top: 2rem;">
+    <h3>🗓️ 개인 일정</h3>
+    <button type="button" onclick="addSchedule()">+ 일정 추가</button>
+    <div id="schedule-list">
+      <!-- Dynamically appended schedule blocks -->
+    </div>
+  </section>
+
+  <br>
+  <button type="submit">제출</button>
 </form>
+
+<!-- 🔳 Project Modal -->
+<div id="projectModal" class="modal" style="display:none;">
+  <div class="modal-content">
+    <h3>프로젝트 선택</h3>
+    <label><input type="checkbox" id="toggleAllProjects" onchange="toggleProjectList()"> 모든 프로젝트 보기</label>
+    <ul id="projectOptions">
+      <!-- Populated via JS -->
+    </ul>
+    <button type="button" onclick="addSelectedProjects()">추가</button>
+    <button type="button" onclick="closeProjectModal()">닫기</button>
+  </div>
+</div>
+
+<style>
+  .modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+</style>
+
+<script>
+  const allProjects = {{ all_projects | tojson }};
+  const assignedProjects = {{ assigned_projects | tojson }};
+  const addedProjectIds = new Set();
+
+  function openProjectModal() {
+    document.getElementById("projectModal").style.display = "flex";
+    populateProjectList(false);
+  }
+
+  function closeProjectModal() {
+    document.getElementById("projectModal").style.display = "none";
+  }
+
+  function toggleProjectList() {
+    const showAll = document.getElementById("toggleAllProjects").checked;
+    populateProjectList(showAll);
+  }
+
+  function populateProjectList(showAll) {
+    const container = document.getElementById("projectOptions");
+    container.innerHTML = "";
+    const list = showAll ? allProjects : assignedProjects;
+
+    list.forEach(p => {
+      if (!addedProjectIds.has(p.id)) {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <label>
+            <input type="checkbox" value="${p.id}">
+            [${p.solution_name}] ${p.project_name}
+          </label>
+        `;
+        container.appendChild(li);
+      }
+    });
+  }
+
+  function addSelectedProjects() {
+    const checkboxes = document.querySelectorAll("#projectOptions input[type='checkbox']:checked");
+    checkboxes.forEach(cb => {
+      const projectId = parseInt(cb.value);
+      const project = allProjects.find(p => p.id === projectId);
+      if (project && !addedProjectIds.has(projectId)) {
+        addedProjectIds.add(projectId);
+        const container = document.getElementById("project-list");
+        const wrapper = document.createElement("div");
+        wrapper.classList.add("project-block");
+        wrapper.innerHTML = `
+          <hr><h4>${project.solution_name} - ${project.project_name}</h4>
+          <input type="hidden" name="project_id[]" value="${project.id}">
+          <label>진행상황</label>
+          <textarea name="progress[]"></textarea>
+          <label>특이사항</label>
+          <textarea name="issue[]"></textarea>
+          <label>영업지원 사항</label>
+          <textarea name="sales_support[]"></textarea>
+          <label>그 외 특이사항</label>
+          <textarea name="other_note[]"></textarea>
+        `;
+        container.appendChild(wrapper);
+      }
+    });
+    closeProjectModal();
+  }
+
+  function addSchedule() {
+    const container = document.getElementById("schedule-list");
+    const idx = container.children.length;
+
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("schedule-block");
+    wrapper.innerHTML = `
+      <hr>
+      <label>구분</label>
+      <select name="schedule_category[]">
+        <option value="출장">출장</option>
+        <option value="외근">외근</option>
+        <option value="휴가">휴가</option>
+        <option value="휴일근무">휴일근무</option>
+      </select>
+      <label>제목</label>
+      <input type="text" name="schedule_title[]">
+      <label>장소</label>
+      <input type="text" name="schedule_location[]">
+      <label>시작일</label>
+      <input type="date" name="schedule_start_date[]">
+      <label>종료일</label>
+      <input type="date" name="schedule_end_date[]">
+      <label>비고</label>
+      <input type="text" name="schedule_description[]">
+    `;
+    container.appendChild(wrapper);
+  }
+</script>
+
 {% endblock %}
