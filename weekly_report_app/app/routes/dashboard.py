@@ -15,6 +15,10 @@ def index():
     user_id = session['user_id']
     user = User.query.get(user_id)
 
+    # 🔒 Redirect to admin dashboard if user is named "admin"
+    if user.name.lower() == 'admin':
+        return redirect(url_for('admin.admin_dashboard'))
+
     # Get the start date (Sunday) of the current week
     week_start = get_sunday_of_current_week()
 

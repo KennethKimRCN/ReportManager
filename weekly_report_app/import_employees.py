@@ -16,7 +16,8 @@ employees = [
     {"name": "민준홍", "employee_id": "30057537", "position": "차장", "email": "joonhong.min@yokogawa.com"},
     {"name": "유혜빈", "employee_id": "30059497", "position": "사원", "email": "hyebin.yoo@yokogawa.com"},
     {"name": "오윤석", "employee_id": "35001480", "position": "대리", "email": "yoonseok.oh@yokogawa.com"},
-    {"name": "박현민",    "employee_id": "35003195", "position": "대리", "email": "hyunmin.park@yokogawa.com"},
+    {"name": "박현민", "employee_id": "35003195", "position": "대리", "email": "hyunmin.park@yokogawa.com"},
+    {"name": "admin", "employee_id": "0", "position": "admin", "email": "khangnyon.kim@yokogawa.com"}
 ]
 
 # Insert into database

@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<h2>🛠️ 관리자 페이지</h2>
+
+<!-- ==== User Management Section ==== -->
+<section>
+  <h3>👤 사용자 관리</h3>
+  <a href="{{ url_for('admin.add_user') }}"><button>+ 사용자 추가</button></a>
+  <table>
+    <thead>
+      <tr>
+        <th>이름</th>
+        <th>사번</th>
+        <th>직책</th>
+        <th>이메일</th>
+        <th>권한</th>
+        <th>작업</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+      <tr>
+        <td>{{ user.name }}</td>
+        <td>{{ user.employee_id }}</td>
+        <td>{{ user.position }}</td>
+        <td>{{ user.email }}</td>
+        <td>{{ '관리자' if user.is_manager else '일반 사용자' }}</td>
+        <td>
+          <a href="{{ url_for('admin.edit_user', user_id=user.id) }}">수정</a> |
+          <a href="{{ url_for('admin.delete_user', user_id=user.id) }}" onclick="return confirm('삭제하시겠습니까?')">삭제</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<hr>
+
+<!-- ==== Project Management Section ==== -->
+<section style="margin-top: 2rem;">
+  <h3>📁 프로젝트 관리</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>프로젝트명</th>
+        <th>솔루션</th>
+        <th>담당자</th>
+        <th>작업</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for project in projects %}
+      <tr>
+        <td>{{ project.project_name }}</td>
+        <td>{{ project.solution_name }}</td>
+        <td>
+          {% for u in project.assignees %}{{ u.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+        </td>
+        <td>
+          <a href="{{ url_for('admin.edit_project', project_id=project.id) }}">수정</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+
+{% endblock %}

@@ -45,10 +45,20 @@ class ProjectTag(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
 
 
+class SolutionItem(db.Model):
+    __tablename__ = 'solution_item'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+
+    projects = db.relationship('Project', back_populates='solution_item', cascade='all, delete')
+
+
 class Project(db.Model):
     __tablename__ = 'project'
 
     id = db.Column(db.Integer, primary_key=True)
+    solution_item_id = db.Column(db.Integer, db.ForeignKey('solution_item.id'), nullable=False)
     solution_name = db.Column(db.String(100), nullable=False)
     company = db.Column(db.String(100), nullable=False)
     location = db.Column(db.String(100), nullable=False)
@@ -58,15 +68,12 @@ class Project(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    assignees = db.relationship(
-        'User', secondary=project_assignees, back_populates='assigned_projects'
-    )
-    tags = db.relationship(
-        'ProjectTag', secondary=project_tags, backref='projects'
-    )
+    assignees = db.relationship('User', secondary=project_assignees, back_populates='assigned_projects')
+    tags = db.relationship('ProjectTag', secondary=project_tags, backref='projects')
     snapshots = db.relationship('ProjectSnapshot', back_populates='project', cascade='all, delete-orphan')
     sales_supports = db.relationship('SalesSupport', backref='project')
     change_logs = db.relationship('ProjectChangeLog', back_populates='project', cascade='all, delete-orphan')
+    solution_item = db.relationship('SolutionItem', back_populates='projects')
     project_updates = db.relationship('ProjectUpdate', back_populates='project')
 
 
