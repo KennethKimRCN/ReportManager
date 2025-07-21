@@ -12,7 +12,7 @@
     <nav>
       {% if session.get('user_id') %}
         <a href="{{ url_for('dashboard.index') }}">대시보드</a>
-        <a href="{{ url_for('report.create_report') }}">보고서 작성</a>
+        <a href="{{ url_for('report.edit_report') }}">이번 주 보고서 편집</a>
         <a href="{{ url_for('project.create_project') }}">프로젝트 등록</a>
         <a href="{{ url_for('auth.logout') }}">로그아웃</a>
       {% else %}

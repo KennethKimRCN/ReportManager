@@ -11,8 +11,8 @@ with app.app_context():
         print("❌ No employees found in the database.")
     else:
         table = [
-            [emp.name, emp.employee_id, emp.position, emp.email]
+            [emp.name, emp.employee_id, emp.position, emp.email, emp.is_manager]
             for emp in employees
         ]
-        headers = ["Name", "Employee ID", "Position", "Email"]
+        headers = ["Name", "Employee ID", "Position", "Email", "Is Manager"]
         print(tabulate(table, headers=headers, tablefmt="grid"))

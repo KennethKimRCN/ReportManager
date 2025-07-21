@@ -17,3 +17,9 @@ def get_week_label(week_start):
 def get_previous_week_range(current_start):
     prev_start = current_start - timedelta(days=7)
     return get_current_week_range(prev_start)
+
+from datetime import date, timedelta
+
+def get_sunday_of_current_week():
+    today = date.today()
+    return today - timedelta(days=today.weekday() + 1 if today.weekday() < 6 else 0)

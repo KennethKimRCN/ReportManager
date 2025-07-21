@@ -1,50 +1,51 @@
-from flask import Blueprint, render_template, request, redirect, session, url_for, flash
-from app.models import Project, Report, ProjectUpdate, PersonalSchedule
-from app.utils.date_utils import get_current_week_range
+from flask import Blueprint, render_template, session, redirect, url_for, request, flash
+from datetime import timedelta
+from app import db
+from app.models import Report, Project, ProjectUpdate, PersonalSchedule
+from app.utils.date_utils import get_sunday_of_current_week
 from app.utils.snapshot_utils import ensure_snapshot_for_project
 from app.utils.diff_utils import compare_project_updates
-from app import db
-from datetime import datetime, date
+from datetime import datetime
 
 bp = Blueprint('report', __name__, url_prefix='/report')
 
 
-@bp.route('/create', methods=['GET', 'POST'])
-def create_report():
+@bp.route('/edit', methods=['GET', 'POST'])
+def edit_report():
+    # Redirect if not logged in
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
 
     user_id = session['user_id']
-    week_start, week_end = get_current_week_range()
+    week_start = get_sunday_of_current_week()
+    week_end = week_start + timedelta(days=6)
 
-    # Check if report already exists
-    existing = Report.query.filter_by(user_id=user_id, week_start=week_start).first()
-    if existing:
-        flash('이번 주 보고서는 이미 작성되었습니다.')
-        return redirect(url_for('dashboard.index'))
-
-    # List only projects assigned to user
-    assigned_projects = Project.query \
-        .join(Project.assignees) \
-        .filter_by(id=user_id) \
-        .all()
+    # Fetch or create the report for current week
+    report = Report.query.filter_by(user_id=user_id, week_start=week_start).first()
+    if not report:
+        report = Report(user_id=user_id, week_start=week_start, week_end=week_end, status='Draft')
+        db.session.add(report)
+        db.session.commit()
 
     if request.method == 'POST':
         status = request.form.get('status')  # Draft or Submitted
+        report.status = status
+        report.week_end = week_end
+        report.submitted_at = datetime.utcnow() if status == 'Submitted' else None
+        db.session.commit()
 
-        report = Report(
-            user_id=user_id,
-            week_start=week_start,
-            week_end=week_end,
-            status=status,
-            submitted_at=datetime.utcnow() if status == 'Submitted' else None
-        )
-        db.session.add(report)
-        db.session.flush()  # get report.id
+        # List only projects assigned to user
+        assigned_projects = Project.query \
+            .join(Project.assignees) \
+            .filter_by(id=user_id) \
+            .all()
 
-        # <-- Lazy Snapshot Hook added here -->
+        # Ensure snapshots for assigned projects
         for project in assigned_projects:
             ensure_snapshot_for_project(project.id)
+
+        # Remove existing project updates for this report (optional: depends on your update strategy)
+        ProjectUpdate.query.filter_by(report_id=report.id).delete()
 
         # Save project updates
         for project in assigned_projects:
@@ -64,6 +65,9 @@ def create_report():
                     other_note=other
                 )
                 db.session.add(update)
+
+        # Remove existing personal schedules (optional: depends on update strategy)
+        PersonalSchedule.query.filter_by(report_id=report.id).delete()
 
         # Save personal schedules
         for i in range(1, 6):
@@ -85,10 +89,8 @@ def create_report():
         flash("보고서가 저장되었습니다.")
         return redirect(url_for('dashboard.index'))
 
-    return render_template('create_report.html',
-                           week_start=week_start,
-                           week_end=week_end,
-                           assigned_projects=assigned_projects)
+    # GET request: render form with existing report data
+    return render_template('create_report.html', report=report, edit_mode=True)
 
 
 @bp.route('/view/<int:report_id>')

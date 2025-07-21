@@ -1,62 +1,47 @@
 from flask import Blueprint, render_template, session, redirect, url_for
-from app.models import Report, User, ProjectUpdate, Project
-from app.utils.date_utils import get_current_week_range, get_week_label
-from datetime import date, datetime
-from app import db
-import re
+from app.models import Report, User
+from app.utils.date_utils import get_sunday_of_current_week
+from app.utils.report_utils import generate_weekly_reports_if_missing
 
 bp = Blueprint('dashboard', __name__)
 
 
 @bp.route('/')
 def index():
+    # Redirect to login if user not logged in
     if 'user_id' not in session:
         return redirect(url_for('auth.login'))
 
     user_id = session['user_id']
-    is_manager = session.get('is_manager', False)
-    today = date.today()
-    week_start, week_end = get_current_week_range(today)
+    user = User.query.get(user_id)
 
-    if is_manager:
-        # Manager: See reports grouped by user for the current week
-        all_reports = Report.query.filter_by(week_start=week_start).all()
-        employees = User.query.order_by(User.name).all()
-        return render_template('dashboard.html',
-                               is_manager=True,
-                               employees=employees,
-                               reports=all_reports,
-                               week_label=get_week_label(week_start))
+    # Get the start date (Sunday) of the current week
+    week_start = get_sunday_of_current_week()
+
+    # Lazy trigger: Generate weekly reports if they are missing
+    generate_weekly_reports_if_missing()
+
+    if user.is_manager:
+        # Manager view: list employees (non-managers) and their reports for current week
+        employees = User.query.filter_by(is_manager=False).all()
+        reports = Report.query.filter_by(week_start=week_start).all()
+
+        return render_template(
+            'dashboard.html',
+            is_manager=True,
+            employees=employees,
+            reports=reports,
+            week_label=week_start.strftime('Y%yW%U'),  # e.g. Y25W30
+            current_week=week_start,
+            submitted_count=len(reports),
+            total_users=len(employees),
+            available_weeks=[],  # You can implement this later to show selectable weeks
+        )
     else:
-        # Employee: See only their own submitted reports
-        my_reports = Report.query.filter_by(user_id=user_id).order_by(Report.week_start.desc()).all()
-        return render_template('dashboard.html',
-                               is_manager=False,
-                               reports=my_reports)
-
-
-# New route for STEP 8: Manager Aggregated View
-
-@bp.route('/project/<int:project_id>/week/<string:week>')
-def view_project_week(project_id, week):
-    if 'user_id' not in session or not session.get('is_manager'):
-        return redirect(url_for('auth.login'))
-
-    # week = e.g. Y25W28
-    match = re.match(r'Y(\d{2})W(\d{2})', week)
-    if not match:
-        return "Invalid week format", 400
-
-    year = int("20" + match.group(1))
-    week_num = int(match.group(2))
-    # Calculate the week start date (Sunday)
-    week_start = datetime.strptime(f'{year}-W{week_num}-0', "%Y-W%W-%w").date()
-
-    updates = ProjectUpdate.query \
-        .filter_by(project_id=project_id) \
-        .join(Report) \
-        .filter(Report.week_start == week_start) \
-        .all()
-
-    project = Project.query.get_or_404(project_id)
-    return render_template('project_week_view.html', project=project, updates=updates, week=week)
+        # Employee view: only show their own reports (ordered by week descending)
+        reports = Report.query.filter_by(user_id=user.id).order_by(Report.week_start.desc()).all()
+        return render_template(
+            'dashboard.html',
+            is_manager=False,
+            reports=reports
+        )
