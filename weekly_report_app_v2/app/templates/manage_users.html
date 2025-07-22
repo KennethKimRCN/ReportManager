@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Manage Users</title>
+</head>
+<body>
+    <h1>Manage Users</h1>
+
+    <a href="{{ url_for('main.add_user') }}">Add New User</a>
+    <table border="1" cellpadding="5" cellspacing="0" style="margin-top: 10px;">
+        <thead>
+            <tr>
+                <th>Employee ID</th>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Email</th>
+                <th>Manager</th>
+                <th>Active</th>
+                <th>Admin</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.employee_id }}</td>
+                <td>{{ user.name }}</td>
+                <td>{{ user.position }}</td>
+                <td>{{ user.email }}</td>
+                <td>{{ 'Yes' if user.is_manager else 'No' }}</td>
+                <td>{{ 'Yes' if user.is_active else 'No' }}</td>
+                <td>{{ 'Yes' if user.is_admin else 'No' }}</td>
+                <td>
+                    <a href="{{ url_for('main.edit_user', user_id=user.id) }}">Edit</a> | 
+                    <form action="{{ url_for('main.delete_user', user_id=user.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Are you sure?');">
+                        <button type="submit" style="background:none; border:none; color:red; cursor:pointer;">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <br>
+    <a href="{{ url_for('main.dashboard') }}">Back to Dashboard</a>
+</body>
+</html>

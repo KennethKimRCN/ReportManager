@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Edit Report</title>
+</head>
+<body>
+    <h1>Edit Report #{{ report.id }}</h1>
+
+    <form method="POST">
+        <p><strong>Employee:</strong> {{ report.user.name }} ({{ report.user.employee_id }})</p>
+        <p><strong>Week Start:</strong> {{ report.week_start.strftime('%Y-%m-%d') }}</p>
+        <p><strong>Week End:</strong> {{ report.week_end.strftime('%Y-%m-%d') }}</p>
+
+        <label for="status">Status:</label>
+        <select name="status" id="status" required>
+            <option value="Draft" {% if report.status == 'Draft' %}selected{% endif %}>Draft</option>
+            <option value="Submitted" {% if report.status == 'Submitted' %}selected{% endif %}>Submitted</option>
+        </select>
+        <br><br>
+
+        <button type="submit">Save Changes</button>
+        <a href="{{ url_for('main.dashboard') }}">Cancel</a>
+    </form>
+</body>
+</html>

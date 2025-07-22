@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Add Solution Item</title>
+</head>
+<body>
+    <h1>Add Solution Item</h1>
+
+    <form method="POST" action="{{ url_for('main.add_solution_item') }}">
+        <label for="name">Solution Item Name:</label><br/>
+        <input type="text" id="name" name="name" required><br/><br/>
+
+        <input type="submit" value="Add Solution Item">
+    </form>
+
+    <p><a href="{{ url_for('main.dashboard') }}">Back to Dashboard</a></p>
+</body>
+</html>
