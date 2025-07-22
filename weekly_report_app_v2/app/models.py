@@ -109,7 +109,7 @@ class SolutionItem(db.Model):
 
 class Project(db.Model):
     __tablename__ = 'project'
-
+    #add revision version
     id = db.Column(db.Integer, primary_key=True)
     solution_item_id = db.Column(db.Integer, db.ForeignKey('solution_item.id'), nullable=False)
     solution_name = db.Column(db.String(100), nullable=False)
@@ -123,6 +123,7 @@ class Project(db.Model):
 
     solution_item = db.relationship('SolutionItem', back_populates='projects')
     project_updates = db.relationship('ProjectUpdate', back_populates='project', cascade='all, delete-orphan')
+    
 
 
 class ProjectUpdate(db.Model):

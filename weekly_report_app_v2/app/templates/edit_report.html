@@ -22,5 +22,78 @@
         <button type="submit">Save Changes</button>
         <a href="{{ url_for('main.dashboard') }}">Cancel</a>
     </form>
+    <h2>Solutions</h2>
+    <div id="solution-list">
+        {% for solution in report.solution_items %}
+            <div class="solution-block" data-id="{{ solution.id }}">
+                <strong>{{ solution.name }}</strong>
+                <button type="button" class="remove-btn">Remove</button>
+                <input type="hidden" name="solution_ids[]" value="{{ solution.id }}">
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Add Solution Section -->
+    <button type="button" id="add-solution-btn">Add Solution</button>
+    <div id="solution-select-container" style="display: none; margin-top: 10px;">
+        <select id="available-solutions">
+            {% for solution in all_solutions %}
+                {% if solution not in report.solution_items %}
+                    <option value="{{ solution.id }}">{{ solution.name }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+        <button type="button" id="confirm-add-btn">Add</button>
+    </div>
+    
+    <script>
+    document.getElementById('add-solution-btn').addEventListener('click', function() {
+        document.getElementById('solution-select-container').style.display = 'block';
+    });
+    
+    document.getElementById('confirm-add-btn').addEventListener('click', function() {
+        const select = document.getElementById('available-solutions');
+        const selectedId = select.value;
+        const selectedName = select.options[select.selectedIndex].text;
+    
+        if (!selectedId) return;
+    
+        // Add to visible list
+        const div = document.createElement('div');
+        div.classList.add('solution-block');
+        div.setAttribute('data-id', selectedId);
+        div.innerHTML = `
+            <strong>${selectedName}</strong>
+            <button type="button" class="remove-btn">Remove</button>
+            <input type="hidden" name="solution_ids[]" value="${selectedId}">
+        `;
+    
+        document.getElementById('solution-list').appendChild(div);
+    
+        // Remove from dropdown
+        select.remove(select.selectedIndex);
+    
+        // Hide select again
+        document.getElementById('solution-select-container').style.display = 'none';
+    });
+    
+    // Remove button (delegated event handling)
+    document.getElementById('solution-list').addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-btn')) {
+            const block = e.target.closest('.solution-block');
+            const id = block.getAttribute('data-id');
+            const name = block.querySelector('strong').innerText;
+    
+            // Re-add to dropdown
+            const option = document.createElement('option');
+            option.value = id;
+            option.text = name;
+            document.getElementById('available-solutions').appendChild(option);
+    
+            // Remove block
+            block.remove();
+        }
+    });
+    </script>
 </body>
 </html>

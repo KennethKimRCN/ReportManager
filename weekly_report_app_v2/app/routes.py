@@ -180,6 +180,7 @@ def delete_user(user_id):
 @admin_required
 def edit_report(report_id):
     report = Report.query.get_or_404(report_id)
+    all_solutions = SolutionItem.query.all()
 
     if request.method == 'POST':
         status = request.form.get('status')
@@ -188,17 +189,25 @@ def edit_report(report_id):
             flash('Invalid status selected.', 'error')
             return redirect(url_for('main.edit_report', report_id=report_id))
 
-        # If status changed to Submitted and submitted_at is not already set, assign current time
+        # Submission handling
         if status == 'Submitted' and not report.submitted_at:
             report.submitted_at = datetime.utcnow()
-        # If status is Draft, clear submitted_at
         elif status == 'Draft':
             report.submitted_at = None
 
         report.status = status
-        db.session.commit()
 
+        # Handle solution associations
+        selected_ids = set(map(int, request.form.getlist('solution_ids[]')))
+
+        for solution in all_solutions:
+            if solution.id in selected_ids:
+                solution.report = report
+            elif solution.report_id == report.id:
+                solution.report = None
+
+        db.session.commit()
         flash('Report updated successfully.', 'success')
         return redirect(url_for('main.dashboard'))
 
-    return render_template('edit_report.html', report=report)
+    return render_template('edit_report.html', report=report, all_solutions=all_solutions)
