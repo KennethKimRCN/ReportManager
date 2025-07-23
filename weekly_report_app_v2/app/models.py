@@ -9,6 +9,20 @@ project_update_assignees = db.Table(
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
 )
 
+# Default assignees per Project (template-level)
+project_assignees = db.Table(
+    'project_assignees',
+    db.Column('project_id', db.Integer, db.ForeignKey('project.id'), primary_key=True),
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
+)
+
+# Many-to-many: Report <-> SolutionItem
+report_solution_items = db.Table(
+    'report_solution_items',
+    db.Column('report_id', db.Integer, db.ForeignKey('report.id'), primary_key=True),
+    db.Column('solution_item_id', db.Integer, db.ForeignKey('solution_item.id'), primary_key=True)
+)
+
 # --- Models ---
 
 class User(db.Model):
@@ -29,8 +43,13 @@ class User(db.Model):
         secondary=project_update_assignees,
         back_populates='assignees'
     )
+    assigned_projects = db.relationship(
+        'Project',
+        secondary=project_assignees,
+        back_populates='default_assignees'
+    )
 
-
+## Report Related DB schema
 class Report(db.Model):
     __tablename__ = 'report'
 
@@ -44,15 +63,82 @@ class Report(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     user = db.relationship('User', back_populates='reports')
-    other_notes_entries = db.relationship('OtherNote', back_populates='report', cascade='all, delete-orphan')
-    personal_schedules = db.relationship('PersonalSchedule', back_populates='report', cascade='all, delete-orphan')
-    solution_items = db.relationship('SolutionItem', back_populates='report', cascade='all, delete-orphan')
+
+    solution_items = db.relationship(
+        'SolutionItem',
+        secondary=report_solution_items,
+        back_populates='reports'
+    )
+
+    project_updates = db.relationship('ProjectUpdate', back_populates='report', cascade='all, delete-orphan')
 
     __table_args__ = (
         db.UniqueConstraint('user_id', 'week_start', name='uix_user_week_start'),
     )
 
+class SolutionItem(db.Model):
+    __tablename__ = 'solution_item'
 
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), nullable=False, unique=True)
+
+    reports = db.relationship(
+        'Report',
+        secondary=report_solution_items,
+        back_populates='solution_items'
+    )
+
+    projects = db.relationship('Project', back_populates='solution_item')
+
+class Project(db.Model):
+    __tablename__ = 'project'
+
+    id = db.Column(db.Integer, primary_key=True)
+    solution_item_id = db.Column(db.Integer, db.ForeignKey('solution_item.id'), nullable=False)
+    location = db.Column(db.String(100), nullable=False)
+    company = db.Column(db.String(100), nullable=False)
+    project_name = db.Column(db.String(100), nullable=False)
+    code = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    #revision = db.Column(db.Integer, nullable=False, default = 1)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    solution_item = db.relationship('SolutionItem', back_populates='projects')
+    project_updates = db.relationship('ProjectUpdate', back_populates='project', cascade='all, delete-orphan')
+
+    default_assignees = db.relationship(
+        'User',
+        secondary=project_assignees,
+        back_populates='assigned_projects'
+    )
+
+
+class ProjectUpdate(db.Model):
+    __tablename__ = 'project_update'
+
+    id = db.Column(db.Integer, primary_key=True)
+    report_id = db.Column(db.Integer, db.ForeignKey('report.id'), nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
+
+    schedule = db.Column(db.Text)
+    progress = db.Column(db.Text, nullable=False)
+    issue = db.Column(db.Text)
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    report = db.relationship('Report', back_populates='project_updates')
+    project = db.relationship('Project', back_populates='project_updates')
+
+    assignees = db.relationship(
+        'User',
+        secondary=project_update_assignees,
+        back_populates='assigned_project_updates'
+    )
+
+## Below are work in progress. Currently not used
+'''
 class OtherNote(db.Model):
     __tablename__ = 'other_note'
 
@@ -94,58 +180,6 @@ class Companion(db.Model):
 
     personal_schedule = db.relationship('PersonalSchedule', back_populates='companions')
 
-
-class SolutionItem(db.Model):
-    __tablename__ = 'solution_item'
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
-    report_id = db.Column(db.Integer, db.ForeignKey('report.id'))
-
-    report = db.relationship('Report', back_populates='solution_items')
-    projects = db.relationship('Project', back_populates='solution_item', cascade='all, delete-orphan')
-    sales_supports = db.relationship('SalesSupport', back_populates='solution_item', cascade='all, delete-orphan')
-
-
-class Project(db.Model):
-    __tablename__ = 'project'
-    #add revision version
-    id = db.Column(db.Integer, primary_key=True)
-    solution_item_id = db.Column(db.Integer, db.ForeignKey('solution_item.id'), nullable=False)
-    solution_name = db.Column(db.String(100), nullable=False)
-    company = db.Column(db.String(100), nullable=False)
-    location = db.Column(db.String(100), nullable=False)
-    project_name = db.Column(db.String(100), nullable=False)
-    code = db.Column(db.String(50), unique=True, nullable=False, index=True)
-
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    solution_item = db.relationship('SolutionItem', back_populates='projects')
-    project_updates = db.relationship('ProjectUpdate', back_populates='project', cascade='all, delete-orphan')
-    
-
-
-class ProjectUpdate(db.Model):
-    __tablename__ = 'project_update'
-
-    id = db.Column(db.Integer, primary_key=True)
-    project_id = db.Column(db.Integer, db.ForeignKey('project.id'), nullable=False)
-    progress = db.Column(db.Text, nullable=False)
-    issue = db.Column(db.Text)
-    sales_support = db.Column(db.Text)
-    other_note = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    project = db.relationship('Project', back_populates='project_updates')
-    assignees = db.relationship(
-        'User',
-        secondary=project_update_assignees,
-        back_populates='assigned_project_updates'
-    )
-
-
 class SalesSupport(db.Model):
     __tablename__ = 'sales_support'
 
@@ -171,3 +205,4 @@ class SalesSupportCompanion(db.Model):
     name = db.Column(db.String(100), nullable=False)
 
     sales_support = db.relationship('SalesSupport', back_populates='companions')
+'''

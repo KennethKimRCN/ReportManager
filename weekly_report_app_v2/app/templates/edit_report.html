@@ -1,99 +1,220 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>Edit Report</title>
+  <meta charset="UTF-8">
+  <title>Edit Weekly Report</title>
+  <style>
+    body { font-family: Arial; padding: 2rem; }
+    .solution-block, .project-block { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; border-radius: 8px; }
+    .project-block { background: #f9f9f9; margin-left: 2rem; }
+    .btn { padding: 5px 10px; margin: 0 5px; }
+    .btn-remove { background-color: red; color: white; border: none; cursor: pointer; }
+    .btn-add { background-color: green; color: white; border: none; cursor: pointer; }
+  </style>
 </head>
 <body>
-    <h1>Edit Report #{{ report.id }}</h1>
+  <h2>Edit Weekly Report (ID: {{ report.id }})</h2>
 
-    <form method="POST">
-        <p><strong>Employee:</strong> {{ report.user.name }} ({{ report.user.employee_id }})</p>
-        <p><strong>Week Start:</strong> {{ report.week_start.strftime('%Y-%m-%d') }}</p>
-        <p><strong>Week End:</strong> {{ report.week_end.strftime('%Y-%m-%d') }}</p>
+  <form id="reportForm" method="POST">
+    <label>Status:
+      <select name="status">
+        <option value="Draft" {% if report.status == 'Draft' %}selected{% endif %}>Draft</option>
+        <option value="Submitted" {% if report.status == 'Submitted' %}selected{% endif %}>Submitted</option>
+      </select>
+    </label>
+    <br><br>
 
-        <label for="status">Status:</label>
-        <select name="status" id="status" required>
-            <option value="Draft" {% if report.status == 'Draft' %}selected{% endif %}>Draft</option>
-            <option value="Submitted" {% if report.status == 'Submitted' %}selected{% endif %}>Submitted</option>
-        </select>
-        <br><br>
-
-        <button type="submit">Save Changes</button>
-        <a href="{{ url_for('main.dashboard') }}">Cancel</a>
-    </form>
-    <h2>Solutions</h2>
-    <div id="solution-list">
+    <div id="solution-container">
         {% for solution in report.solution_items %}
-            <div class="solution-block" data-id="{{ solution.id }}">
-                <strong>{{ solution.name }}</strong>
-                <button type="button" class="remove-btn">Remove</button>
-                <input type="hidden" name="solution_ids[]" value="{{ solution.id }}">
-            </div>
-        {% endfor %}
-    </div>
-    
-    <!-- Add Solution Section -->
-    <button type="button" id="add-solution-btn">Add Solution</button>
-    <div id="solution-select-container" style="display: none; margin-top: 10px;">
-        <select id="available-solutions">
-            {% for solution in all_solutions %}
-                {% if solution not in report.solution_items %}
-                    <option value="{{ solution.id }}">{{ solution.name }}</option>
-                {% endif %}
+        <div class="solution-block" data-id="{{ solution.id }}">
+          <h3>{{ solution.name }}</h3>
+          
+          {% for project in solution.projects %}
+            {# Find the corresponding update for this project in this report #}
+            {% set update = None %}
+            {% for u in report.project_updates %}
+              {% if u.project_id == project.id %}
+                {% set update = u %}
+              {% endif %}
             {% endfor %}
-        </select>
-        <button type="button" id="confirm-add-btn">Add</button>
+      
+            <div class="project-block" data-id="{{ project.id }}">
+              <strong>{{ project.location }} / {{ project.company }} / {{ project.project_name }} / {{ project.code }}
+                {% if project.default_assignees %}
+                  / <span class="assignees">{{ project.default_assignees | map(attribute='name') | join(', ') }}</span>
+                {% endif %}
+              </strong><br>
+      
+              <label>Schedule: <input name="schedule" value="{{ update.schedule if update }}"></label>
+              <label>Progress: <input name="progress" value="{{ update.progress if update }}" required></label>
+              <label>Issue: <input name="issue" value="{{ update.issue if update }}"></label>
+              <button type="button" class="btn btn-remove remove-project">Remove Project</button>
+            </div>
+          {% endfor %}
+      
+          <button type="button" class="btn add-project">Add Project</button>
+          <button type="button" class="btn btn-remove remove-solution">Remove Solution</button>
+        </div>
+      {% endfor %}
+      
     </div>
-    
-    <script>
-    document.getElementById('add-solution-btn').addEventListener('click', function() {
-        document.getElementById('solution-select-container').style.display = 'block';
+
+    <br>
+    <button type="button" id="addSolutionBtn" class="btn btn-add">+ Add Solution</button>
+    <br><br>
+    <button type="submit" class="btn">Save Report</button>
+
+    <!-- Hidden field to hold serialized structure -->
+    <input type="hidden" name="data_json" id="dataJson">
+  </form>
+
+  <!-- Add Solution Modal -->
+  <div id="solutionModal" style="display:none; background:#fff; border:1px solid #ccc; padding:1rem; position:absolute;">
+    <h4>Select a Solution</h4>
+    <div id="solutionOptions"></div>
+    <button onclick="closeSolutionModal()">Close</button>
+  </div>
+
+  <!-- Add Project Modal -->
+  <div id="projectModal" style="display:none; background:#fff; border:1px solid #ccc; padding:1rem; position:absolute;">
+    <h4>Select a Project</h4>
+    <div id="projectOptions"></div>
+    <button onclick="closeProjectModal()">Close</button>
+  </div>
+
+  <script>
+    const solutionContainer = document.getElementById('solution-container');
+    const dataJsonInput = document.getElementById('dataJson');
+    const reportId = {{ report.id }};
+
+    // --- Modal control ---
+    let currentSolutionId = null;
+    function openSolutionModal() {
+      fetch(`/solution_items/available?report_id=${reportId}`)
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById('solutionOptions');
+          container.innerHTML = '';
+          data.forEach(item => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.innerText = item.name;
+            btn.onclick = () => {
+              addSolution(item.id, item.name);
+              closeSolutionModal();
+            };
+            container.appendChild(btn);
+          });
+          document.getElementById('solutionModal').style.display = 'block';
+        });
+    }
+
+    function closeSolutionModal() {
+      document.getElementById('solutionModal').style.display = 'none';
+    }
+
+    function openProjectModal(solutionId) {
+      currentSolutionId = solutionId;
+      fetch(`/projects/by_solution/${solutionId}`)
+        .then(res => res.json())
+        .then(data => {
+          const container = document.getElementById('projectOptions');
+          container.innerHTML = '';
+          data.forEach(p => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.innerText = `${p.location} / ${p.company} / ${p.project_name} / ${p.code}`;
+            btn.onclick = () => {
+              addProjectBlock(currentSolutionId, p);
+              closeProjectModal();
+            };
+            container.appendChild(btn);
+          });
+          document.getElementById('projectModal').style.display = 'block';
+        });
+    }
+
+    function closeProjectModal() {
+      document.getElementById('projectModal').style.display = 'none';
+    }
+
+    // --- Dynamic Handlers ---
+    document.getElementById('addSolutionBtn').addEventListener('click', openSolutionModal);
+
+    function addSolution(id, name) {
+      if (document.querySelector(`[data-solution-id="${id}"]`)) return;
+
+      const div = document.createElement('div');
+      div.className = 'solution-block';
+      div.dataset.solutionId = id;
+      div.innerHTML = `
+        <h3>${name}
+          <button type="button" class="btn btn-remove remove-solution">Remove Solution</button>
+        </h3>
+        <button type="button" class="btn btn-add add-project">+ Add Project</button>
+        <div class="project-list"></div>
+      `;
+      solutionContainer.appendChild(div);
+    }
+
+    solutionContainer.addEventListener('click', e => {
+      if (e.target.classList.contains('remove-solution')) {
+        e.target.closest('.solution-block').remove();
+      } else if (e.target.classList.contains('add-project')) {
+        const solutionDiv = e.target.closest('.solution-block');
+        const solutionId = solutionDiv.dataset.solutionId;
+        openProjectModal(solutionId);
+      } else if (e.target.classList.contains('remove-project')) {
+        e.target.closest('.project-block').remove();
+      }
     });
-    
-    document.getElementById('confirm-add-btn').addEventListener('click', function() {
-        const select = document.getElementById('available-solutions');
-        const selectedId = select.value;
-        const selectedName = select.options[select.selectedIndex].text;
-    
-        if (!selectedId) return;
-    
-        // Add to visible list
-        const div = document.createElement('div');
-        div.classList.add('solution-block');
-        div.setAttribute('data-id', selectedId);
+
+    function addProjectBlock(solutionId, project) {
+      const solutionDiv = document.querySelector(`[data-solution-id="${solutionId}"]`);
+      const projectList = solutionDiv.querySelector('.project-list');
+      if (projectList.querySelector(`[data-project-id="${project.id}"]`)) return;
+
+      const div = document.createElement('div');
+      div.className = 'project-block';
+      div.dataset.projectId = project.id;
+        // --- Display project with assignees (if any) ---
+        const assigneesText = project.assignees && project.assignees.length
+        ? ` / <span class='assignees'>${project.assignees.join(', ')}</span>`
+        : '';
+
         div.innerHTML = `
-            <strong>${selectedName}</strong>
-            <button type="button" class="remove-btn">Remove</button>
-            <input type="hidden" name="solution_ids[]" value="${selectedId}">
+        <strong>${project.location} / ${project.company} / ${project.project_name} / ${project.code}${assigneesText}</strong><br>
+        <label>Schedule: <input name="schedule"></label>
+        <label>Progress: <input name="progress" required></label>
+        <label>Issue: <input name="issue"></label>
+        <button type="button" class="btn btn-remove remove-project">Remove Project</button>
         `;
-    
-        document.getElementById('solution-list').appendChild(div);
-    
-        // Remove from dropdown
-        select.remove(select.selectedIndex);
-    
-        // Hide select again
-        document.getElementById('solution-select-container').style.display = 'none';
+      projectList.appendChild(div);
+    }
+
+    // --- Form Submit ---
+    document.getElementById('reportForm').addEventListener('submit', e => {
+      const data = {
+        status: document.querySelector('[name="status"]').value,
+        solutions: []
+      };
+
+      document.querySelectorAll('.solution-block').forEach(s => {
+        const solId = parseInt(s.dataset.solutionId);
+        const projects = [];
+        s.querySelectorAll('.project-block').forEach(p => {
+          projects.push({
+            id: parseInt(p.dataset.projectId),
+            schedule: p.querySelector('[name="schedule"]').value,
+            progress: p.querySelector('[name="progress"]').value,
+            issue: p.querySelector('[name="issue"]').value
+          });
+        });
+        data.solutions.push({ id: solId, projects });
+      });
+
+      dataJsonInput.value = JSON.stringify(data);
     });
-    
-    // Remove button (delegated event handling)
-    document.getElementById('solution-list').addEventListener('click', function(e) {
-        if (e.target.classList.contains('remove-btn')) {
-            const block = e.target.closest('.solution-block');
-            const id = block.getAttribute('data-id');
-            const name = block.querySelector('strong').innerText;
-    
-            // Re-add to dropdown
-            const option = document.createElement('option');
-            option.value = id;
-            option.text = name;
-            document.getElementById('available-solutions').appendChild(option);
-    
-            // Remove block
-            block.remove();
-        }
-    });
-    </script>
+  </script>
 </body>
 </html>

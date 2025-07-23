@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, abort
+from flask import Blueprint, render_template, jsonify, json, request, redirect, url_for, flash, session, abort
 from .models import *
 from . import db
 from functools import wraps
@@ -53,7 +53,9 @@ def dashboard():
 
     all_users = None
     solution_items = None
-    all_reports = None  # Add this
+    all_reports = None
+    projects = None
+    project_updates = None
 
     if user.is_admin:
         all_users = User.query.all()
@@ -63,7 +65,19 @@ def dashboard():
             Report.week_end, Report.status, Report.submitted_at
         ).all()
 
-    return render_template('dashboard.html', user=user, all_users=all_users, solution_items=solution_items, all_reports=all_reports)
+        # ✅ Add these two lines
+        projects = Project.query.all()
+        project_updates = ProjectUpdate.query.all()
+
+    return render_template(
+        'dashboard.html',
+        user=user,
+        all_users=all_users,
+        solution_items=solution_items,
+        all_reports=all_reports,
+        projects=projects,
+        project_updates=project_updates
+    )
 
 
 @main.route('/solution-items/add', methods=['GET', 'POST'])
@@ -167,15 +181,6 @@ def edit_user(user_id):
 
     return render_template('add_edit_user.html', action="Edit", user=user_to_edit)
 
-@main.route('/manage-users/delete/<int:user_id>', methods=['POST'])
-@admin_required
-def delete_user(user_id):
-    user_to_delete = User.query.get_or_404(user_id)
-    db.session.delete(user_to_delete)
-    db.session.commit()
-    flash("User deleted successfully.", "success")
-    return redirect(url_for('main.manage_users'))
-
 @main.route('/reports/edit/<int:report_id>', methods=['GET', 'POST'])
 @admin_required
 def edit_report(report_id):
@@ -183,31 +188,62 @@ def edit_report(report_id):
     all_solutions = SolutionItem.query.all()
 
     if request.method == 'POST':
-        status = request.form.get('status')
+        payload = json.loads(request.form.get('data_json'))
+        status = payload.get('status')
+        report.status = status
 
-        if status not in ['Draft', 'Submitted']:
-            flash('Invalid status selected.', 'error')
-            return redirect(url_for('main.edit_report', report_id=report_id))
-
-        # Submission handling
         if status == 'Submitted' and not report.submitted_at:
             report.submitted_at = datetime.utcnow()
         elif status == 'Draft':
             report.submitted_at = None
 
-        report.status = status
+        # Remove old solution items not in new list
+        current_ids = {s.id for s in report.solution_items}
+        new_ids = {s['id'] for s in payload['solutions']}
+        for sol in report.solution_items[:]:
+            if sol.id not in new_ids:
+                db.session.delete(sol)
 
-        # Handle solution associations
-        selected_ids = set(map(int, request.form.getlist('solution_ids[]')))
-
-        for solution in all_solutions:
-            if solution.id in selected_ids:
+        # Add or update solution items and projects
+        for solution_data in payload['solutions']:
+            sid = solution_data['id']
+            solution = SolutionItem.query.get(sid)
+            if solution not in report.solution_items:
                 solution.report = report
-            elif solution.report_id == report.id:
-                solution.report = None
+
+            for proj_data in solution_data['projects']:
+                project = Project.query.get(proj_data['id'])
+                # Search for an existing ProjectUpdate for this report and project
+                update = ProjectUpdate.query.filter_by(report_id=report.id, project_id=project.id).first()
+                if not update:
+                    update = ProjectUpdate(report=report, project=project)
+                    db.session.add(update)
+                update.progress = proj_data['progress']
+                update.issue = proj_data['issue']
+                update.schedule = proj_data['schedule']
 
         db.session.commit()
         flash('Report updated successfully.', 'success')
         return redirect(url_for('main.dashboard'))
 
     return render_template('edit_report.html', report=report, all_solutions=all_solutions)
+@main.route('/solution_items/available')
+def get_available_solutions():
+    report_id = request.args.get('report_id', type=int)
+    report = Report.query.get(report_id)
+    used_ids = [s.id for s in report.solution_items]
+    available = SolutionItem.query.filter(~SolutionItem.id.in_(used_ids)).all()
+    return jsonify([{'id': s.id, 'name': s.name} for s in available])
+
+@main.route('/projects/by_solution/<int:solution_id>')
+def get_projects_by_solution(solution_id):
+    projects = Project.query.filter_by(solution_item_id=solution_id).all()
+    # --- Include default assignees in project API response ---
+    return jsonify([{
+        'id': p.id,
+        'company': p.company,
+        'location': p.location,
+        'project_name': p.project_name,
+        'code': p.code,
+        'assignees': [u.name for u in p.default_assignees]
+    } for p in projects])
