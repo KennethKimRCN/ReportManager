@@ -3,176 +3,185 @@
 <head>
     <meta charset="UTF-8" />
     <title>Dashboard</title>
-    <style>
-        table, th, td {
-            border: 1px solid black;
-            border-collapse: collapse;
-            padding: 8px;
-        }
-        h2 {
-            margin-top: 40px;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
 </head>
 <body>
     <h1>Welcome, {{ user.name }}!</h1>
 
     {% if user.is_admin and all_users %}
 
-        <h2>Available Solution Items</h2>
-        <p><a href="{{ url_for('main.add_solution_item') }}">Add New Solution Item</a></p>
-        {% if solution_items %}
+        <div class="section-container">
+            <h2>Available Solution Items</h2>
+            <p><a href="{{ url_for('main.add_solution_item') }}">Add New Solution Item</a></p>
+            {% if solution_items %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in solution_items %}
+                        <tr>
+                            <td>{{ item.id }}</td>
+                            <td>{{ item.name }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No solution items found.</p>
+            {% endif %}
+        </div>
+
+        <div class="section-container">
+            <h2>All Reports</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>Report ID</th>
+                        <th>Employee ID</th>
                         <th>Name</th>
+                        <th>Week Start</th>
+                        <th>Week End</th>
+                        <th>Status</th>
+                        <th>Submitted At</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in solution_items %}
+                    {% for report in all_reports %}
                     <tr>
-                        <td>{{ item.id }}</td>
-                        <td>{{ item.name }}</td>
+                        <td>{{ report.id }}</td>
+                        <td>{{ report.employee_id }}</td>
+                        <td>{{ report.name }}</td>
+                        <td>{{ report.week_start.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ report.week_end.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if report.status == 'Submitted' %}badge-success
+                                {% elif report.status == 'Pending' %}badge-warning
+                                {% elif report.status == 'Rejected' %}badge-danger
+                                {% else %}badge-info{% endif %}">
+                                {{ report.status }}
+                            </span>
+                        </td>
+                        <td>{% if report.submitted_at %}{{ report.submitted_at.strftime('%Y-%m-%d %H:%M') }}{% else %}N/A{% endif %}</td>
+                        <td><a href="{{ url_for('main.edit_report', report_id=report.id) }}">Edit</a></td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
-        {% else %}
-            <p>No solution items found.</p>
-        {% endif %}
+        </div>
 
-        <h2>All Reports</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Report ID</th>
-                    <th>Employee ID</th>
-                    <th>Name</th>
-                    <th>Week Start</th>
-                    <th>Week End</th>
-                    <th>Status</th>
-                    <th>Submitted At</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for report in all_reports %}
-                <tr>
-                    <td>{{ report.id }}</td>
-                    <td>{{ report.employee_id }}</td>
-                    <td>{{ report.name }}</td>
-                    <td>{{ report.week_start.strftime('%Y-%m-%d') }}</td>
-                    <td>{{ report.week_end.strftime('%Y-%m-%d') }}</td>
-                    <td>{{ report.status }}</td>
-                    <td>{% if report.submitted_at %}{{ report.submitted_at.strftime('%Y-%m-%d %H:%M') }}{% else %}N/A{% endif %}</td>
-                    <td>
-                        <a href="{{ url_for('main.edit_report', report_id=report.id) }}">Edit</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="section-container">
+            <h2>All Employees</h2>
+            <p><a href="{{ url_for('main.manage_users') }}">Manage Users</a></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Employee ID</th>
+                        <th>Name</th>
+                        <th>Position</th>
+                        <th>Email</th>
+                        <th>Is Manager</th>
+                        <th>Is Active</th>
+                        <th>Is Admin</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emp in all_users %}
+                    <tr>
+                        <td>{{ emp.employee_id }}</td>
+                        <td>{{ emp.name }}</td>
+                        <td>{{ emp.position }}</td>
+                        <td>{{ emp.email }}</td>
+                        <td>{{ 'Yes' if emp.is_manager else 'No' }}</td>
+                        <td>{{ 'Yes' if emp.is_active else 'No' }}</td>
+                        <td>{{ 'Yes' if emp.is_admin else 'No' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-        <h2>All Employees</h2>
-        <p><a href="{{ url_for('main.manage_users') }}">Manage Users</a></p>
-        <table>
-            <thead>
-                <tr>
-                    <th>Employee ID</th>
-                    <th>Name</th>
-                    <th>Position</th>
-                    <th>Email</th>
-                    <th>Is Manager</th>
-                    <th>Is Active</th>
-                    <th>Is Admin</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for emp in all_users %}
-                <tr>
-                    <td>{{ emp.employee_id }}</td>
-                    <td>{{ emp.name }}</td>
-                    <td>{{ emp.position }}</td>
-                    <td>{{ emp.email }}</td>
-                    <td>{{ 'Yes' if emp.is_manager else 'No' }}</td>
-                    <td>{{ 'Yes' if emp.is_active else 'No' }}</td>
-                    <td>{{ 'Yes' if emp.is_admin else 'No' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="section-container">
+            <h2>All Registered Projects</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Project ID</th>
+                        <th>Solution</th>
+                        <th>Company</th>
+                        <th>Location</th>
+                        <th>Project Name</th>
+                        <th>Code</th>
+                        <th>Assignees</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for project in projects %}
+                    <tr>
+                        <td>{{ project.id }}</td>
+                        <td>{{ project.solution_item.name }}</td>
+                        <td>{{ project.company }}</td>
+                        <td>{{ project.location }}</td>
+                        <td>{{ project.project_name }}</td>
+                        <td>{{ project.code }}</td>
+                        <td>{{ project.default_assignees | map(attribute='name') | join(', ') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
-        <h2>All Registered Projects</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Project ID</th>
-                    <th>Solution</th>
-                    <th>Company</th>
-                    <th>Location</th>
-                    <th>Project Name</th>
-                    <th>Code</th>
-                    <th>Assignees</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for project in projects %}
-                <tr>
-                    <td>{{ project.id }}</td>
-                    <td>{{ project.solution_item.name }}</td>
-                    <td>{{ project.company }}</td>
-                    <td>{{ project.location }}</td>
-                    <td>{{ project.project_name }}</td>
-                    <td>{{ project.code }}</td>
-                    <td>{{ project.default_assignees | map(attribute='name') | join(', ') }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-
-        <h2>All Project Updates</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Update ID</th>
-                    <th>Report ID</th>
-                    <th>Project Name</th>
-                    <th>Project Code</th>
-                    <th>Schedule</th>
-                    <th>Progress</th>
-                    <th>Issue</th>
-                    <th>Assignees</th>
-                    <th>Created At</th>
-                    <th>Updated At</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for update in project_updates %}
-                <tr>
-                    <td>{{ update.id }}</td>
-                    <td>{{ update.report_id }}</td>
-                    <td>{{ update.project.project_name }}</td>
-                    <td>{{ update.project.code }}</td>
-                    <td>{{ update.schedule }}</td>
-                    <td>{{ update.progress }}</td>
-                    <td>{{ update.issue }}</td>
-                    <td>{{ update.assignees | map(attribute='name') | join(', ') }}</td>
-                    <td>{{ update.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td>{{ update.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="section-container">
+            <h2>All Project Updates</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Update ID</th>
+                        <th>Report ID</th>
+                        <th>Project Name</th>
+                        <th>Project Code</th>
+                        <th>Schedule</th>
+                        <th>Progress</th>
+                        <th>Issue</th>
+                        <th>Assignees</th>
+                        <th>Created At</th>
+                        <th>Updated At</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for update in project_updates %}
+                    <tr>
+                        <td>{{ update.id }}</td>
+                        <td>{{ update.report_id }}</td>
+                        <td>{{ update.project.project_name }}</td>
+                        <td>{{ update.project.code }}</td>
+                        <td>{{ update.schedule }}</td>
+                        <td>{{ update.progress }}</td>
+                        <td>{{ update.issue }}</td>
+                        <td>{{ update.assignees | map(attribute='name') | join(', ') }}</td>
+                        <td>{{ update.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>{{ update.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
 
     {% else %}
-        <p><strong>Employee ID:</strong> {{ user.employee_id }}</p>
-        <p><strong>Position:</strong> {{ user.position }}</p>
-        <p><strong>Email:</strong> {{ user.email }}</p>
-        <p><strong>Manager:</strong> {{ 'Yes' if user.is_manager else 'No' }}</p>
-        <p><strong>Admin:</strong> {{ 'Yes' if user.is_admin else 'No' }}</p>
+        <div class="section-container">
+            <p><strong>Employee ID:</strong> {{ user.employee_id }}</p>
+            <p><strong>Position:</strong> {{ user.position }}</p>
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>Manager:</strong> {{ 'Yes' if user.is_manager else 'No' }}</p>
+            <p><strong>Admin:</strong> {{ 'Yes' if user.is_admin else 'No' }}</p>
+        </div>
     {% endif %}
 
-    <a href="{{ url_for('main.logout') }}">Logout</a>
+    <a class="logout" href="{{ url_for('main.logout') }}">Logout</a>
 </body>
 </html>

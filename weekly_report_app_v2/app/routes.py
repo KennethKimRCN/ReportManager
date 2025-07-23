@@ -267,13 +267,13 @@ def edit_report(report_id):
             'assignees': [u.name for u in update.assignees]
         })
 
-        return render_template(
-            'edit_report.html',
-            report=report,
-            all_solutions=all_solutions,
-            prefill_data=list(structured_data.values()),
-            report_data=list(structured_data.values())  # <-- add this line
-        )
+    return render_template(
+        'edit_report.html',
+        report=report,
+        all_solutions=all_solutions,
+        prefill_data=list(structured_data.values()),
+        report_data=list(structured_data.values())  # <-- add this line
+    )
 
 
 @main.route('/solution_items/available')
