@@ -137,7 +137,8 @@
                 <tr>
                     <th>Update ID</th>
                     <th>Report ID</th>
-                    <th>Project</th>
+                    <th>Project Name</th>
+                    <th>Project Code</th>
                     <th>Schedule</th>
                     <th>Progress</th>
                     <th>Issue</th>
@@ -151,7 +152,8 @@
                 <tr>
                     <td>{{ update.id }}</td>
                     <td>{{ update.report_id }}</td>
-                    <td>{{ update.project.code }} - {{ update.project.project_name }}</td>
+                    <td>{{ update.project.project_name }}</td>
+                    <td>{{ update.project.code }}</td>
                     <td>{{ update.schedule }}</td>
                     <td>{{ update.progress }}</td>
                     <td>{{ update.issue }}</td>

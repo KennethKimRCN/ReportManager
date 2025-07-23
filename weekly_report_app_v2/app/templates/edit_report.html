@@ -44,7 +44,10 @@
     <template id="projectTemplate">
         <div class="project-section">
             <label>Project:
-                <select class="project-select"></select>
+                <select class="project-select">
+                    <option value="">Select Project</option>
+                    <!-- Options will be populated dynamically -->
+                </select>
             </label>
             <button type="button" onclick="removeElement(this.closest('.project-section'))">X</button>
             <div>
@@ -58,6 +61,6 @@
     <script>
         const reportData = {{ report_data|tojson }};
     </script>
-    <script src="{{ url_for('static', filename='edit_report.js') }}"></script>
+    <script src="{{ url_for('static', filename='edit_report.js') }}"></script>  
 </body>
 </html>

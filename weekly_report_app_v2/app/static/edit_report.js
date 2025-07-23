@@ -21,9 +21,30 @@ function addSolutionBlock() {
 
 function addProjectToSolution(btn) {
     const solBlock = btn.closest('.solution-section');
+    const solId = solBlock.querySelector('.solution-select').value;
     const projectsContainer = solBlock.querySelector('.projects-container');
-    const tmpl = document.getElementById('projectTemplate').content.cloneNode(true);
-    projectsContainer.appendChild(tmpl);
+
+    if (!solId) {
+        alert("Please select a solution first.");
+        return;
+    }
+
+    fetch(`/projects/by_solution/${solId}`)
+        .then(res => res.json())
+        .then(projects => {
+            const tmpl = document.getElementById('projectTemplate').content.cloneNode(true);
+            const wrapper = tmpl.querySelector('.project-section');
+
+            const select = wrapper.querySelector('.project-select');
+            projects.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = `${p.code} - ${p.project_name}`;
+                select.appendChild(opt);
+            });
+
+            projectsContainer.appendChild(wrapper);
+        });
 }
 
 function removeElement(el) {
