@@ -64,10 +64,14 @@ def dashboard():
             Report.id, User.employee_id, User.name, Report.week_start,
             Report.week_end, Report.status, Report.submitted_at
         ).all()
-
-        # ✅ Add these two lines
-        projects = Project.query.all()
-        project_updates = ProjectUpdate.query.all()
+        projects = Project.query.options(
+            db.joinedload(Project.solution_item),
+            db.joinedload(Project.default_assignees)
+        ).all()
+        project_updates = ProjectUpdate.query.options(
+            db.joinedload(ProjectUpdate.project),
+            db.joinedload(ProjectUpdate.assignees)
+        ).all()
 
     return render_template(
         'dashboard.html',
@@ -78,7 +82,6 @@ def dashboard():
         projects=projects,
         project_updates=project_updates
     )
-
 
 @main.route('/solution-items/add', methods=['GET', 'POST'])
 @admin_required
@@ -185,48 +188,94 @@ def edit_user(user_id):
 @admin_required
 def edit_report(report_id):
     report = Report.query.get_or_404(report_id)
-    all_solutions = SolutionItem.query.all()
+    # Convert all solutions and their projects to JSON-serializable structure
+    all_solutions = []
+    for sol in SolutionItem.query.all():
+        all_solutions.append({
+            'id': sol.id,
+            'name': sol.name,
+            'projects': [{
+                'id': p.id,
+                'code': p.code,
+                'company': p.company,
+                'location': p.location,
+                'project_name': p.project_name
+            } for p in sol.projects]
+        })
 
     if request.method == 'POST':
         payload = json.loads(request.form.get('data_json'))
         status = payload.get('status')
+
         report.status = status
+        report.submitted_at = datetime.utcnow() if status == 'Submitted' else None
 
-        if status == 'Submitted' and not report.submitted_at:
-            report.submitted_at = datetime.utcnow()
-        elif status == 'Draft':
-            report.submitted_at = None
+        # --- Clear existing updates ---
+        ProjectUpdate.query.filter_by(report_id=report.id).delete()
 
-        # Remove old solution items not in new list
-        current_ids = {s.id for s in report.solution_items}
-        new_ids = {s['id'] for s in payload['solutions']}
-        for sol in report.solution_items[:]:
-            if sol.id not in new_ids:
-                db.session.delete(sol)
+        # --- Track updated solutions ---
+        selected_solution_ids = set()
 
-        # Add or update solution items and projects
-        for solution_data in payload['solutions']:
-            sid = solution_data['id']
-            solution = SolutionItem.query.get(sid)
-            if solution not in report.solution_items:
-                solution.report = report
+        for solution_data in payload.get('solutions', []):
+            sol_id = solution_data['id']
+            selected_solution_ids.add(sol_id)
+
+            solution = SolutionItem.query.get(sol_id)
+            if solution and solution not in report.solution_items:
+                report.solution_items.append(solution)
 
             for proj_data in solution_data['projects']:
-                project = Project.query.get(proj_data['id'])
-                # Search for an existing ProjectUpdate for this report and project
-                update = ProjectUpdate.query.filter_by(report_id=report.id, project_id=project.id).first()
-                if not update:
-                    update = ProjectUpdate(report=report, project=project)
-                    db.session.add(update)
-                update.progress = proj_data['progress']
-                update.issue = proj_data['issue']
-                update.schedule = proj_data['schedule']
+                update = ProjectUpdate(
+                    report=report,
+                    project_id=proj_data['id'],
+                    schedule=proj_data.get('schedule'),
+                    progress=proj_data.get('progress'),
+                    issue=proj_data.get('issue')
+                )
+                db.session.add(update)
+
+        # Remove deselected solution items
+        report.solution_items = [
+            s for s in report.solution_items if s.id in selected_solution_ids
+        ]
 
         db.session.commit()
-        flash('Report updated successfully.', 'success')
+        flash("Report saved successfully.", "success")
         return redirect(url_for('main.dashboard'))
 
-    return render_template('edit_report.html', report=report, all_solutions=all_solutions)
+    # ---------- Build Initial Data to Pass to Template ----------
+    existing_updates = ProjectUpdate.query.filter_by(report_id=report.id).all()
+    structured_data = {}
+
+    for update in existing_updates:
+        sol = update.project.solution_item
+        if sol.id not in structured_data:
+            structured_data[sol.id] = {
+                'id': sol.id,
+                'name': sol.name,
+                'projects': []
+            }
+        structured_data[sol.id]['projects'].append({
+            'id': update.project.id,
+            'company': update.project.company,
+            'location': update.project.location,
+            'project_name': update.project.project_name,
+            'code': update.project.code,
+            'schedule': update.schedule,
+            'progress': update.progress,
+            'issue': update.issue,
+            'assignees': [u.name for u in update.assignees]
+        })
+
+        return render_template(
+            'edit_report.html',
+            report=report,
+            all_solutions=all_solutions,
+            prefill_data=list(structured_data.values()),
+            report_data=list(structured_data.values())  # <-- add this line
+        )
+
+
 @main.route('/solution_items/available')
 def get_available_solutions():
     report_id = request.args.get('report_id', type=int)
