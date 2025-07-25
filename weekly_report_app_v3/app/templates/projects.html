@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Projects{% endblock %}
+
+{% block content %}
+  <h1>Projects</h1>
+  <table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Solution Item</th>
+        <th>Location</th>
+        <th>Company</th>
+        <th>Project Name</th>
+        <th>Code</th>
+        <th>Created At</th>
+        <th>Updated At</th>
+        <th>Edit</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for project in projects %}
+      <tr>
+        <td>{{ project.id }}</td>
+        <td>{{ project.solution_item.name }}</td>
+        <td>{{ project.location }}</td>
+        <td>{{ project.company }}</td>
+        <td>{{ project.project_name }}</td>
+        <td>{{ project.code }}</td>
+        <td>{{ project.created_at.strftime('%Y-%m-%d') }}</td>
+        <td>{{ project.updated_at.strftime('%Y-%m-%d') }}</td>
+        <td><a href="{{ url_for('edit_project', project_id=project.id) }}">edit</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8">No projects found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

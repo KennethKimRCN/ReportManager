@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Report{% endblock %}
+
+{% block content %}
+<h2>{{ report.user.name }}'s Y{{ report.year }} W{{ report.week }} Weekly Report - ID: {{ report.id }}</h2>
+Status: {{ report.status }}
+
+<form method="POST">
+  
+  <button type="button" id="add-solution-btn">Add Solution</button><br><br>
+
+  <!-- Preloaded existing updates -->
+  <div id="solution-container">
+    {% for item in existing_updates %}
+    <div class="solution-wrapper" style="margin-bottom: 12px; border: 1px solid #ccc; padding: 10px;">
+      <select name="solution_item_ids[]" required class="solution-select">
+        <option value="">Select a solution item</option>
+        {% for sol in solution_items %}
+        <option value="{{ sol.id }}" {% if sol.id == item.solution_id %}selected{% endif %}>{{ sol.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="button" class="remove-solution">Remove Solution</button>
+      <button type="button" class="add-project">Add Project</button>
+
+      <div class="project-wrapper" style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
+        <select name="project_ids[]" required class="project-select">
+          <option value="">Select a project</option>
+          {% for proj in projects_by_solution[item.solution_id] %}
+          <option value="{{ proj.id }}" {% if proj.id == item.project_id %}selected{% endif %}>{{ proj.project_name }}</option>
+          {% endfor %}
+        </select>
+        <button type="button" class="remove-project">Remove Project</button>
+
+        <div class="project-details" style="display: block; margin-top: 10px;">
+          <label>Schedule:
+            <textarea name="schedules[]" rows="2" class="form-control">{{ item.schedule }}</textarea>
+          </label><br>
+          <label>Progress (required):
+            <textarea name="progresses[]" rows="2" class="form-control" required>{{ item.progress }}</textarea>
+          </label><br>
+          <label>Issue:
+            <textarea name="issues[]" rows="2" class="form-control">{{ item.issue }}</textarea>
+          </label>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <button type="submit">Update Report</button>
+</form>
+
+<!-- Templates for JS to clone -->
+<template id="solution-template">
+  <div class="solution-wrapper" style="margin-bottom: 12px; border: 1px solid #ccc; padding: 10px;">
+    <select name="solution_item_ids[]" required class="solution-select">
+      <option value="">Select a solution item</option>
+    </select>
+    <button type="button" class="remove-solution">Remove Solution</button>
+    <button type="button" class="add-project">Add Project</button>
+  </div>
+</template>
+
+<template id="project-template">
+  <div class="project-wrapper" style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
+    <select name="project_ids[]" required class="project-select">
+      <option value="">Select a project</option>
+    </select>
+    <button type="button" class="remove-project">Remove Project</button>
+
+    <div class="project-details" style="display: none; margin-top: 10px;">
+      <label>Schedule:
+        <textarea name="schedules[]" rows="2" class="form-control"></textarea>
+      </label><br>
+      <label>Progress:
+        <textarea name="progresses[]" rows="2" class="form-control" required></textarea>
+      </label><br>
+      <label>Issue:
+        <textarea name="issues[]" rows="2" class="form-control"></textarea>
+      </label>
+    </div>
+  </div>
+</template>
+
+<!-- Pass data to JS -->
+<script>
+  const solutionItems = {{ solution_items | tojson }};
+  const projectsBySolution = {{ projects_by_solution | tojson }};
+</script>
+<script src="{{ url_for('static', filename='edit_report.js') }}"></script>
+{% endblock %}

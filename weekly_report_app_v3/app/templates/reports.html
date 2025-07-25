@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+  <h1>Reports</h1>
+  <table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>User</th>
+        <th>Week</th>
+        <th>Status</th>
+        <th>Edit</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for report, yrwk in reports_with_yrwk %}
+      <tr>
+        <td>{{ report.id }}</td>
+        <td>{{ report.user.name if report.user else 'N/A' }}</td>
+        <td>{{ yrwk }}</td>
+        <td>{{ report.status }}</td>
+        <td><a href="{{ url_for('edit_report', report_id=report.id) }}">Edit</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="3">No reports found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

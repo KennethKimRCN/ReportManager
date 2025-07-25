@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Project Updates{% endblock %}
+
+{% block content %}
+  <h1>Project Updates</h1>
+  <table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Project Name</th>
+        <th>Schedule</th>
+        <th>Progress</th>
+        <th>Issue</th>
+        <th>Created At</th>
+        <th>Updated At</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for update in project_updates %}
+      <tr>
+        <td>{{ update.id }}</td>
+        <td>{{ update.project.project_name }}</td>
+        <td>{{ update.schedule or '-' }}</td>
+        <td>{{ update.progress or '-' }}</td>
+        <td>{{ update.issue or '-' }}</td>
+        <td>{{ update.created_at.strftime('%Y-%m-%d') }}</td>
+        <td>{{ update.updated_at.strftime('%Y-%m-%d') }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7">No project updates found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

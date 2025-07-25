@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Users{% endblock %}
+
+{% block content %}
+  <h1>Users</h1>
+  <table border="1" cellpadding="5" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Employee ID</th>
+        <th>Name</th>
+        <th>Position</th>
+        <th>Email</th>
+        <th>Manager</th>
+        <th>Active</th>
+        <th>Admin</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+      <tr>
+        <td>{{ user.employee_id }}</td>
+        <td>{{ user.name }}</td>
+        <td>{{ user.position }}</td>
+        <td>{{ user.email }}</td>
+        <td>{{ 'Yes' if user.is_manager else 'No' }}</td>
+        <td>{{ 'Yes' if user.is_active else 'No' }}</td>
+        <td>{{ 'Yes' if user.is_admin else 'No' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7">No users found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Projects{% endblock %}
+
+{% block content %}
+  <h2>Edit Project: {{ project.project_name }}</h2>
+  <form method="POST">
+    <label>Location:</label><br>
+    <input type="text" name="location" value="{{ project.location }}"><br><br>
+
+    <label>Company:</label><br>
+    <input type="text" name="company" value="{{ project.company }}"><br><br>
+
+    <label>Project Name:</label><br>
+    <input type="text" name="project_name" value="{{ project.project_name }}"><br><br>
+
+    <label>Code:</label><br>
+    <input type="text" id="code-input" name="code" value="{{ project.code }}">
+    <label>
+        <input type="checkbox" id="no-code-checkbox"> 없음
+    </label><br><br>
+
+    <button type="submit">Update Project</button>
+  </form>
+
+  <script>
+    const codeInput = document.getElementById('code-input');
+    const noCodeCheckbox = document.getElementById('no-code-checkbox');
+  
+    // Initialize checkbox state on page load
+    window.onload = () => {
+      if (!codeInput.value) {
+        noCodeCheckbox.checked = true;
+        codeInput.value = '';
+        codeInput.readOnly = true;
+        codeInput.style.backgroundColor = '#ddd';  // grey background when readonly
+      }
+    };
+  
+    noCodeCheckbox.addEventListener('change', function() {
+      if (this.checked) {
+        codeInput.value = '';
+        codeInput.readOnly = true;
+        codeInput.style.backgroundColor = '#ddd';  // grey background when readonly
+      } else {
+        codeInput.readOnly = false;
+        codeInput.style.backgroundColor = 'white'; // normal white background
+        codeInput.focus();
+      }
+    });
+  </script>
+{% endblock %}
