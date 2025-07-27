@@ -49,8 +49,12 @@ def edit_report(report_id):
             projects_by_solution[sid] = []
         projects_by_solution[sid].append({
             "id": project.id,
-            "project_name": project.project_name
+            "project_name": project.project_name,
+            "location": project.location,
+            "company": project.company,
+            "code": project.code
         })
+
 
     # Existing project updates (to pre-render)
     existing_updates = []

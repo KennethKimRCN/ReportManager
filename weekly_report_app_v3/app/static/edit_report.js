@@ -1,68 +1,138 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const container = document.getElementById('solution-container');
-    const addButton = document.getElementById('add-solution-btn');
-    const solutionTemplate = document.getElementById('solution-template');
-    const projectTemplate = document.getElementById('project-template');
+  const container = document.getElementById('solution-container');
+  const addButton = document.getElementById('add-solution-btn');
+  const solutionTemplate = document.getElementById('solution-template');
+  const projectTemplate = document.getElementById('project-template');
 
-    addButton.addEventListener('click', () => {
-      const solutionClone = solutionTemplate.content.cloneNode(true);
-      const solutionSelect = solutionClone.querySelector('.solution-select');
+  // --- Solution Modal Elements ---
+  const solutionModal = document.getElementById('solution-modal');
+  const cancelSolutionBtn = document.getElementById('cancel-add-solution');
+  const solutionTable = document.getElementById('solution-table');
 
-      solutionItems.forEach(item => {
-        const option = document.createElement('option');
-        option.value = item.id;
-        option.text = item.name;
-        solutionSelect.appendChild(option);
+  // --- Project Modal Elements ---
+  const projectModal = document.getElementById('project-modal');
+  const projectTableBody = document.querySelector('#project-table tbody');
+  const cancelProjectBtn = document.getElementById('cancel-project-selection');
+
+  // --- State holders ---
+  let activeProjectWrapper = null;
+  let activeSolutionId = null;
+
+  // === SOLUTION MODAL ===
+  addButton.addEventListener('click', () => {
+    solutionModal.style.display = 'block';
+  });
+
+  cancelSolutionBtn.addEventListener('click', () => {
+    solutionModal.style.display = 'none';
+  });
+
+  solutionTable.addEventListener('click', (e) => {
+    const row = e.target.closest('.solution-row');
+    if (!row) return;
+
+    const selectedSolutionId = row.dataset.id;
+    const selectedSolutionName = row.dataset.name;
+
+    // Build solution wrapper
+    const solutionWrapper = document.createElement('div');
+    solutionWrapper.className = 'solution-wrapper';
+    solutionWrapper.style = "margin-bottom: 12px; border: 1px solid #ccc; padding: 10px;";
+
+    solutionWrapper.innerHTML = `
+      <div class="solution-row">
+        <button type="button" class="remove-solution">X</button>
+        <label class="solution-label">솔루션</label>
+        <select name="solution_item_ids[]" required class="solution-select">
+          <option value="${selectedSolutionId}" selected>${selectedSolutionName}</option>
+        </select>
+        <button type="button" class="add-project">Add Project</button>
+      </div>
+    `;
+
+    container.appendChild(solutionWrapper);
+    solutionModal.style.display = 'none';
+  });
+
+  // === PROJECT MODAL ===
+  container.addEventListener('click', (e) => {
+    if (e.target.classList.contains('remove-solution')) {
+      e.target.closest('.solution-wrapper').remove();
+    }
+
+    if (e.target.classList.contains('add-project')) {
+      const wrapper = e.target.closest('.solution-wrapper');
+      const selectedSolutionId = wrapper.querySelector('.solution-select').value;
+
+      if (!selectedSolutionId) {
+        alert("Please select a solution first.");
+        return;
+      }
+
+      const projects = projectsBySolution[selectedSolutionId] || [];
+      if (projects.length === 0) {
+        alert("No projects available for this solution.");
+        return;
+      }
+
+      // Save active state
+      activeProjectWrapper = wrapper;
+      activeSolutionId = selectedSolutionId;
+
+      // Populate project modal table
+      projectTableBody.innerHTML = '';
+      projects.forEach(project => {
+        const row = document.createElement('tr');
+        row.classList.add('project-row');
+        row.style.cursor = 'pointer';
+        row.dataset.project = JSON.stringify(project);
+
+        row.innerHTML = `
+          <td>${project.id}</td>
+          <td>${project.location || '-'}</td>
+          <td>${project.company || '-'}</td>
+          <td>${project.project_name}</td>
+          <td>${project.code || '-'}</td>
+        `;
+        projectTableBody.appendChild(row);
       });
 
-      container.appendChild(solutionClone);
-    });
+      projectModal.style.display = 'block';
+    }
 
-    // Event delegation for dynamic elements
-    container.addEventListener('click', (e) => {
-      if (e.target.classList.contains('remove-solution')) {
-        e.target.closest('.solution-wrapper').remove();
-      }
-
-      if (e.target.classList.contains('add-project')) {
-        const wrapper = e.target.closest('.solution-wrapper');
-        const selectedSolutionId = wrapper.querySelector('.solution-select').value;
-
-        if (!selectedSolutionId) {
-          alert("Please select a solution first.");
-          return;
-        }
-
-        const projects = projectsBySolution[selectedSolutionId] || [];
-        if (projects.length === 0) {
-          alert("No projects available for this solution.");
-          return;
-        }
-
-        const projectClone = projectTemplate.content.cloneNode(true);
-        const projectSelect = projectClone.querySelector('.project-select');
-        const detailSection = projectClone.querySelector('.project-details');
-
-        projects.forEach(project => {
-          const option = document.createElement('option');
-          option.value = project.id;
-          option.text = project.project_name;
-          projectSelect.appendChild(option);
-        });
-
-        projectSelect.addEventListener('change', () => {
-          if (projectSelect.value) {
-            detailSection.style.display = 'block';
-          } else {
-            detailSection.style.display = 'none';
-          }
-        });
-
-        wrapper.appendChild(projectClone);
-      }
-
-      if (e.target.classList.contains('remove-project')) {
-        e.target.closest('.project-wrapper').remove();
-      }
-    });
+    if (e.target.classList.contains('remove-project')) {
+      e.target.closest('.project-wrapper').remove();
+    }
   });
+
+  cancelProjectBtn.addEventListener('click', () => {
+    projectModal.style.display = 'none';
+    activeProjectWrapper = null;
+    activeSolutionId = null;
+  });
+
+  projectTableBody.addEventListener('click', (e) => {
+    const row = e.target.closest('.project-row');
+    if (!row || !activeProjectWrapper || !activeSolutionId) return;
+
+    const project = JSON.parse(row.dataset.project);
+
+    const projectClone = projectTemplate.content.cloneNode(true);
+    const projectSelect = projectClone.querySelector('.project-select');
+    const detailSection = projectClone.querySelector('.project-details');
+
+    const option = document.createElement('option');
+    option.value = project.id;
+    option.text = project.project_name;
+    option.selected = true;
+    projectSelect.appendChild(option);
+
+    detailSection.style.display = 'block';
+    activeProjectWrapper.appendChild(projectClone);
+
+    // Reset modal state
+    projectModal.style.display = 'none';
+    activeProjectWrapper = null;
+    activeSolutionId = null;
+  });
+});

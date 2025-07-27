@@ -14,16 +14,21 @@ Status: {{ report.status }}
   <div id="solution-container">
     {% for item in existing_updates %}
     <div class="solution-wrapper" style="margin-bottom: 12px; border: 1px solid #ccc; padding: 10px;">
-      <select name="solution_item_ids[]" required class="solution-select">
-        <option value="">Select a solution item</option>
-        {% for sol in solution_items %}
-        <option value="{{ sol.id }}" {% if sol.id == item.solution_id %}selected{% endif %}>{{ sol.name }}</option>
-        {% endfor %}
-      </select>
-      <button type="button" class="remove-solution">Remove Solution</button>
-      <button type="button" class="add-project">Add Project</button>
-
+      <!--Solution Container-->
+      <div class="solution-row">
+        <button type="button" class="remove-solution">X</button>
+        <label class="solution-label">솔루션</label>
+        <select name="solution_item_ids[]" required class="solution-select">
+          <option value="">Select a solution item</option>
+          {% for sol in solution_items %}
+          <option value="{{ sol.id }}" {% if sol.id == item.solution_id %}selected{% endif %}>{{ sol.name }}</option>
+          {% endfor %}
+        </select>
+        <button type="button" class="add-project">Add Project</button>
+      </div>
+      <!--Project Container-->
       <div class="project-wrapper" style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
+        프로젝트
         <select name="project_ids[]" required class="project-select">
           <option value="">Select a project</option>
           {% for proj in projects_by_solution[item.solution_id] %}
@@ -31,7 +36,8 @@ Status: {{ report.status }}
           {% endfor %}
         </select>
         <button type="button" class="remove-project">Remove Project</button>
-
+        
+        <!--Project Details-->
         <div class="project-details" style="display: block; margin-top: 10px;">
           <label>Schedule:
             <textarea name="schedules[]" rows="2" class="form-control">{{ item.schedule }}</textarea>
@@ -82,6 +88,54 @@ Status: {{ report.status }}
     </div>
   </div>
 </template>
+
+<!-- Solution Selection Modal -->
+<div id="solution-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); z-index:1000;">
+  <div style="background:white; width:500px; margin:10% auto; padding:20px; border-radius:10px; position:relative;">
+    <h3>Select a Solution</h3>
+    <table id="solution-table" style="width:100%; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th style="border-bottom:1px solid #ccc; text-align:left; padding:8px;">ID</th>
+          <th style="border-bottom:1px solid #ccc; text-align:left; padding:8px;">Solution Name</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for sol in solution_items %}
+        <tr class="solution-row" data-id="{{ sol.id }}" data-name="{{ sol.name }}" style="cursor:pointer;">
+          <td style="padding:8px;">{{ sol.id }}</td>
+          <td style="padding:8px;">{{ sol.name }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <br>
+    <button id="cancel-add-solution">Cancel</button>
+  </div>
+</div>
+
+<!-- Project Selection Modal -->
+<div id="project-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); z-index:1000;">
+  <div style="background:white; width:800px; margin:5% auto; padding:20px; border-radius:10px; position:relative;">
+    <h3>Select a Project</h3>
+    <table id="project-table" style="width:100%; border-collapse: collapse;">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Location</th>
+          <th>Company</th>
+          <th>Project Name</th>
+          <th>Code</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- JS will populate this dynamically -->
+      </tbody>
+    </table>
+    <br>
+    <button id="cancel-project-selection">Cancel</button>
+  </div>
+</div>
 
 <!-- Pass data to JS -->
 <script>
