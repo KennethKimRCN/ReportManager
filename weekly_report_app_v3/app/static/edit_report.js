@@ -42,10 +42,8 @@ document.addEventListener('DOMContentLoaded', () => {
     solutionWrapper.innerHTML = `
       <div class="solution-row">
         <button type="button" class="remove-solution">X</button>
-        <label class="solution-label">솔루션</label>
-        <select name="solution_item_ids[]" required class="solution-select">
-          <option value="${selectedSolutionId}" selected>${selectedSolutionName}</option>
-        </select>
+        <label class="solution-label">솔루션: ${selectedSolutionName}</label>
+        <input type="hidden" name="solution_item_ids[]" value="${selectedSolutionId}">
         <button type="button" class="add-project">Add Project</button>
       </div>
     `;
@@ -62,7 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (e.target.classList.contains('add-project')) {
       const wrapper = e.target.closest('.solution-wrapper');
-      const selectedSolutionId = wrapper.querySelector('.solution-select').value;
+      const selectedSolutionId = wrapper.querySelector('input[name="solution_item_ids[]"]').value;
+
 
       if (!selectedSolutionId) {
         alert("Please select a solution first.");
@@ -118,16 +117,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const project = JSON.parse(row.dataset.project);
 
     const projectClone = projectTemplate.content.cloneNode(true);
-    const projectSelect = projectClone.querySelector('.project-select');
-    const detailSection = projectClone.querySelector('.project-details');
-
-    const option = document.createElement('option');
-    option.value = project.id;
-    option.text = project.project_name;
-    option.selected = true;
-    projectSelect.appendChild(option);
-
-    detailSection.style.display = 'block';
+    projectClone.querySelector('.selected-project-name span').textContent = project.project_name;
+    projectClone.querySelector('.project-id').value = project.id;
+    projectClone.querySelector('.project-details').style.display = 'block';
     activeProjectWrapper.appendChild(projectClone);
 
     // Reset modal state

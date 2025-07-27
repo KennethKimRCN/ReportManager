@@ -17,24 +17,15 @@ Status: {{ report.status }}
       <!--Solution Container-->
       <div class="solution-row">
         <button type="button" class="remove-solution">X</button>
-        <label class="solution-label">솔루션</label>
-        <select name="solution_item_ids[]" required class="solution-select">
-          <option value="">Select a solution item</option>
-          {% for sol in solution_items %}
-          <option value="{{ sol.id }}" {% if sol.id == item.solution_id %}selected{% endif %}>{{ sol.name }}</option>
-          {% endfor %}
-        </select>
+        <label class="solution-label">솔루션: {{ item.solution_name }}</label>
+        <input type="hidden" name="solution_item_ids[]" value="{{ item.solution_id }}">
         <button type="button" class="add-project">Add Project</button>
       </div>
       <!--Project Container-->
       <div class="project-wrapper" style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
-        프로젝트
-        <select name="project_ids[]" required class="project-select">
-          <option value="">Select a project</option>
-          {% for proj in projects_by_solution[item.solution_id] %}
-          <option value="{{ proj.id }}" {% if proj.id == item.project_id %}selected{% endif %}>{{ proj.project_name }}</option>
-          {% endfor %}
-        </select>
+        <div>프로젝트: {{ item.project_name }}</div>
+        <input type="hidden" name="project_ids[]" value="{{ item.project_id }}">
+
         <button type="button" class="remove-project">Remove Project</button>
         
         <!--Project Details-->
@@ -42,7 +33,7 @@ Status: {{ report.status }}
           <label>Schedule:
             <textarea name="schedules[]" rows="2" class="form-control">{{ item.schedule }}</textarea>
           </label><br>
-          <label>Progress (required):
+          <label>Progress:
             <textarea name="progresses[]" rows="2" class="form-control" required>{{ item.progress }}</textarea>
           </label><br>
           <label>Issue:
@@ -63,16 +54,15 @@ Status: {{ report.status }}
     <select name="solution_item_ids[]" required class="solution-select">
       <option value="">Select a solution item</option>
     </select>
-    <button type="button" class="remove-solution">Remove Solution</button>
-    <button type="button" class="add-project">Add Project</button>
+      <label class="solution-label">솔루션: <span class="selected-solution-name"></span></label>
+      <input type="hidden" name="solution_item_ids[]" class="solution-id">
   </div>
 </template>
 
 <template id="project-template">
   <div class="project-wrapper" style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
-    <select name="project_ids[]" required class="project-select">
-      <option value="">Select a project</option>
-    </select>
+    <div class="selected-project-name">프로젝트: <span></span></div>
+    <input type="hidden" name="project_ids[]" class="project-id">
     <button type="button" class="remove-project">Remove Project</button>
 
     <div class="project-details" style="display: none; margin-top: 10px;">
