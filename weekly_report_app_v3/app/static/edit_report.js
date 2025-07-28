@@ -113,16 +113,27 @@ document.addEventListener('DOMContentLoaded', () => {
   projectTableBody.addEventListener('click', (e) => {
     const row = e.target.closest('.project-row');
     if (!row || !activeProjectWrapper || !activeSolutionId) return;
-
+  
     const project = JSON.parse(row.dataset.project);
-
+  
     const projectClone = projectTemplate.content.cloneNode(true);
-    projectClone.querySelector('.selected-project-name span').textContent = project.project_name;
+    
     projectClone.querySelector('.project-id').value = project.id;
     projectClone.querySelector('.project-details').style.display = 'block';
+  
+    projectClone.querySelector('.project-solution-name').textContent = solutionItems.find(s => s.id == activeSolutionId)?.name || '';
+    projectClone.querySelector('.project-location').textContent = project.location || '-';
+    projectClone.querySelector('.project-company').textContent = project.company || '-';
+    projectClone.querySelector('.project-name').textContent = project.project_name || '-';
+    projectClone.querySelector('.project-code').textContent = project.code || '-';
+  
+    // Assuming project.assignees is an array of names or user objects
+    const assignees = project.assignees?.map(a => a.name || a).join(', ') || '-';
+    projectClone.querySelector('.project-assignees').textContent = assignees;
+  
     activeProjectWrapper.appendChild(projectClone);
-
-    // Reset modal state
+  
+    // Reset
     projectModal.style.display = 'none';
     activeProjectWrapper = null;
     activeSolutionId = null;

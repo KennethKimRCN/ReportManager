@@ -23,7 +23,12 @@ Status: {{ report.status }}
       </div>
       <!--Project Container-->
       <div class="project-wrapper" style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
-        <div>프로젝트: {{ item.project_name }}</div>
+        <div>프로젝트: {{ item.solution_name }} /
+          {{ item.location }} /
+          {{ item.company }} /
+          {{ item.project_name }} /
+          {{ item.code }} /
+          {{ item.assignees | join(', ') }}</div>
         <input type="hidden" name="project_ids[]" value="{{ item.project_id }}">
 
         <button type="button" class="remove-project">Remove Project</button>
@@ -61,7 +66,16 @@ Status: {{ report.status }}
 
 <template id="project-template">
   <div class="project-wrapper" style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
-    <div class="selected-project-name">프로젝트: <span></span></div>
+    <div class="project-info">
+      <strong>프로젝트:</strong>
+      <span class="project-solution-name"></span> /
+      <span class="project-location"></span> /
+      <span class="project-company"></span> /
+      <span class="project-name"></span> /
+      <span class="project-code"></span> /
+      <span class="project-assignees"></span>
+    </div>
+
     <input type="hidden" name="project_ids[]" class="project-id">
     <button type="button" class="remove-project">Remove Project</button>
 

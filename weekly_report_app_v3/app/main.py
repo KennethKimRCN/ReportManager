@@ -66,6 +66,10 @@ def edit_report(report_id):
             "solution_name": solution.name,
             "project_id": project.id,
             "project_name": project.project_name,
+            "location": project.location,
+            "company": project.company,
+            "code": project.code or "-",
+            "assignees": [a.name for a in update.assignees] or "-",
             "schedule": update.schedule or "",
             "progress": update.progress or "",
             "issue": update.issue or ""
