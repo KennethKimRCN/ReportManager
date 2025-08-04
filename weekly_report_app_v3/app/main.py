@@ -1,6 +1,8 @@
-from flask import render_template, redirect, request, url_for, flash
+from flask import render_template, jsonify, redirect, request, url_for, flash
 from app import create_app
 from app.models import *
+import requests
+import json
 
 app = create_app()
 
@@ -34,42 +36,33 @@ def show_reports():
 def edit_report(report_id):
     report = Report.query.get_or_404(report_id)
 
-    # Solution items for dropdown
-    solution_items = [
-        {"id": item.id, "name": item.name}
-        for item in SolutionItem.query.order_by(SolutionItem.name).all()
-    ]
+    solution_items = [{"id": s.id, "name": s.name} for s in SolutionItem.query.order_by(SolutionItem.name).all()]
 
-    # Projects grouped by solution
-    projects = Project.query.order_by(Project.project_name).all()
     projects_by_solution = {}
-    for project in projects:
-        sid = project.solution_item_id
-        if sid not in projects_by_solution:
-            projects_by_solution[sid] = []
-        projects_by_solution[sid].append({
+    for project in Project.query.order_by(Project.project_name).all():
+        entry = {
             "id": project.id,
             "project_name": project.project_name,
             "location": project.location,
             "company": project.company,
-            "code": project.code
-        })
+            "code": project.code or "-",
+            "assignees": [a.name for a in project.assignees] if hasattr(project, "assignees") else []
+        }
+        projects_by_solution.setdefault(project.solution_item_id, []).append(entry)
 
-
-    # Existing project updates (to pre-render)
     existing_updates = []
     for update in report.project_updates:
-        project = update.project
-        solution = project.solution_item
+        p = update.project
+        s = p.solution_item
         existing_updates.append({
-            "solution_id": solution.id,
-            "solution_name": solution.name,
-            "project_id": project.id,
-            "project_name": project.project_name,
-            "location": project.location,
-            "company": project.company,
-            "code": project.code or "-",
-            "assignees": [a.name for a in update.assignees] or "-",
+            "solution_id": s.id,
+            "solution_name": s.name,
+            "project_id": p.id,
+            "project_name": p.project_name,
+            "location": p.location,
+            "company": p.company,
+            "code": p.code or "-",
+            "assignees": [{"name": a.name} for a in update.assignees],
             "schedule": update.schedule or "",
             "progress": update.progress or "",
             "issue": update.issue or ""
@@ -83,54 +76,39 @@ def edit_report(report_id):
         existing_updates=existing_updates
     )
 
-
 @app.route('/reports/<int:report_id>/edit', methods=['POST'])
 def update_report(report_id):
     report = Report.query.get_or_404(report_id)
 
-    # 1. Update report status
-    #report.status = request.form['status']
-
-    # 2. Update solution item associations
     report.solution_items.clear()
-    selected_ids = request.form.getlist('solution_item_ids')
+    selected_ids = request.form.getlist('solution_item_ids[]')
     if selected_ids:
-        selected_solutions = SolutionItem.query.filter(SolutionItem.id.in_(selected_ids)).all()
-        report.solution_items.extend(selected_solutions)
+        solutions = SolutionItem.query.filter(SolutionItem.id.in_(selected_ids)).all()
+        report.solution_items.extend(solutions)
 
-    # 3. Clear previous ProjectUpdate entries
     ProjectUpdate.query.filter_by(report_id=report.id).delete()
 
-    # 4. Re-add project updates from form
     project_ids = request.form.getlist('project_ids[]')
     schedules = request.form.getlist('schedules[]')
     progresses = request.form.getlist('progresses[]')
     issues = request.form.getlist('issues[]')
 
     for i in range(len(project_ids)):
-        project_id = project_ids[i]
-        schedule = schedules[i]
-        progress = progresses[i]
-        issue = issues[i]
-
-        if not project_id or not progress.strip():
-            continue  # skip incomplete entries
-
+        if not project_ids[i] or not progresses[i].strip():
+            continue
         update = ProjectUpdate(
             report_id=report.id,
-            project_id=int(project_id),
-            schedule=schedule,
-            progress=progress,
-            issue=issue
+            project_id=int(project_ids[i]),
+            schedule=schedules[i],
+            progress=progresses[i],
+            issue=issues[i]
         )
         db.session.add(update)
 
     try:
         db.session.commit()
-        # flash('Report updated successfully!', 'success')
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        # flash(f'Error updating report: {e}', 'danger')
 
     return redirect(url_for('edit_report', report_id=report.id))
 
@@ -198,6 +176,98 @@ def update_project(project_id):
 def show_project_updates():
     project_updates = ProjectUpdate.query.all()
     return render_template('project_updates.html', project_updates=project_updates)
+
+############ LLM ############ WORK IN PROGRESS
+# Map model names to SQLAlchemy ORM classes
+MODEL_MAP = {
+    "User": User,
+    "Project": Project,
+    "Report": Report,
+}
+
+# Helper: serialize SQLAlchemy model instance to dict
+def model_to_dict(obj):
+    return {c.name: getattr(obj, c.name) for c in obj.__table__.columns}
+
+
+def call_llm(prompt, max_tokens=200, temperature=0):
+    """
+    Calls LM Studio's LLM API with the given prompt.
+    """
+    url = 'http://127.0.0.1:1234/v1/completions'  # adjust if needed
+    payload = {
+        "model": "llama-3.2-1b-instruct",
+        "prompt": prompt,
+        "max_tokens": max_tokens,
+        "temperature": temperature
+    }
+    resp = requests.post(url, json=payload)
+    resp.raise_for_status()
+    data = resp.json()
+    return data.get('choices', [{}])[0].get('text', '')
+
+
+@app.route('/ask-llm', methods=['POST'])
+def query():
+    """
+    Main route: accept natural language query, convert it via LLM to JSON query,
+    build SQLAlchemy query safely, and return results.
+    """
+    user_query = request.json.get('query')
+    if not user_query:
+        return jsonify({'error': 'No query provided'}), 400
+
+    # Step 1: Build prompt for LLM to convert NL query into JSON ORM query
+    llm_prompt = (
+        "You are an assistant that converts natural language queries about weekly reports "
+        "into JSON objects describing ORM queries. The JSON format is:\n"
+        "{\n"
+        '  "model": "<ModelName>",\n'
+        '  "filters": {\n'
+        '    "field1": "value1",\n'
+        '    "field2": "value2",\n'
+        '    ...\n'
+        '  }\n'
+        "}\n"
+        "Only output valid JSON, no explanations.\n"
+        f"Natural language query: \"{user_query}\""
+    )
+
+    try:
+        json_text = call_llm(llm_prompt)
+        # Try to parse JSON safely
+        query_json = json.loads(json_text)
+    except Exception as e:
+        return jsonify({'error': 'Failed to parse LLM response as JSON', 'details': str(e), 'llm_output': json_text}), 400
+
+    model_name = query_json.get("model")
+    filters = query_json.get("filters", {})
+
+    if model_name not in MODEL_MAP:
+        return jsonify({'error': f'Unknown model requested: {model_name}'}), 400
+
+    model = MODEL_MAP[model_name]
+
+    # Build filter conditions safely, whitelist only model columns
+    valid_columns = {c.name for c in model.__table__.columns}
+    filter_conditions = []
+    for field, value in filters.items():
+        if field not in valid_columns:
+            return jsonify({'error': f'Invalid filter field: {field}'}), 400
+        filter_conditions.append(getattr(model, field) == value)
+
+    # Query DB
+    results = db.session.query(model).filter(*filter_conditions).all()
+    results_json = [model_to_dict(r) for r in results]
+
+    return jsonify(results_json)
+
+
+
+@app.route('/ask')
+def ask_page():
+    return render_template('llm_query.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True)

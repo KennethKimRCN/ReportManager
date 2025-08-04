@@ -1,0 +1,62 @@
+<style>
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 10;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background-color: rgba(0,0,0,0.4);
+    }
+    .modal-content {
+      background-color: white;
+      margin: 10% auto;
+      padding: 20px;
+      width: 60%;
+      max-height: 70%;
+      overflow-y: auto;
+      border-radius: 10px;
+    }
+    </style>
+    
+    <div id="projectPopup" class="modal">
+      <div class="modal-content">
+        <h3>Select Projects</h3>
+        <input type="text" id="projectSearch" placeholder="Search project name or code">
+        <select id="solutionFilter">
+          <option value="">All Solutions</option>
+          {% for s in solutions %}
+            <option value="{{ s }}">{{ s }}</option>
+          {% endfor %}
+        </select>
+        <ul id="projectList">
+          {% for p in projects %}
+          <li data-solution="{{ p.solution_name }}" data-name="{{ p.project_name | lower }}" data-code="{{ p.code | lower }}">
+            <input type="checkbox" data-project='{{ p | tojson }}'>
+            {{ p.solution_name }} / {{ p.project_name }} ({{ p.code }})
+          </li>
+          {% endfor %}
+        </ul>
+        <button type="button" onclick="applyProjects()">Add Selected</button>
+        <button type="button" onclick="document.getElementById('projectPopup').style.display='none'">Cancel</button>
+      </div>
+    </div>
+    
+    <script>
+    document.getElementById('projectSearch').addEventListener('input', function() {
+      const q = this.value.toLowerCase();
+      document.querySelectorAll('#projectList li').forEach(li => {
+        const name = li.dataset.name || '';
+        const code = li.dataset.code || '';
+        li.style.display = (name.includes(q) || code.includes(q)) ? '' : 'none';
+      });
+    });
+    
+    document.getElementById('solutionFilter').addEventListener('change', function() {
+      const value = this.value;
+      document.querySelectorAll('#projectList li').forEach(li => {
+        const sol = li.dataset.solution;
+        li.style.display = (!value || sol === value) ? '' : 'none';
+      });
+    });
+    </script>
+    

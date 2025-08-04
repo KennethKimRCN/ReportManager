@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ask the LLM</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        #response { margin-top: 20px; white-space: pre-wrap; background: #f8f8f8; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Ask Report Assistant (LLM)</h1>
+    <input type="text" id="question" placeholder="Ask about a report..." size="50">
+    <button onclick="askLLM()">Ask</button>
+    <div id="response"></div>
+
+    <script>
+        async function askLLM() {
+            const question = document.getElementById('question').value;
+            const responseDiv = document.getElementById('response');
+            responseDiv.innerText = "Thinking...";
+
+            const res = await fetch('/ask-llm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question: question })
+            });
+
+            const data = await res.json();
+            responseDiv.innerText = data.answer || data.error || "No answer.";
+        }
+    </script>
+</body>
+</html>

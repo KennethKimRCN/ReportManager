@@ -1,43 +1,12 @@
-{% extends 'base.html' %}
-{% block content %}
-
-{% if is_manager %}
-  <h2>📋 전체 주간보고 ({{ week_label }})</h2>
-  <table>
-    <thead>
-      <tr><th>이름</th><th>직책</th><th>보고 상태</th></tr>
-    </thead>
-    <tbody>
-      {% for user in employees %}
-        {% set user_report = reports|selectattr("user_id", "equalto", user.id)|list|first %}
-        <tr>
-          <td>{{ user.name }}</td>
-          <td>{{ user.position }}</td>
-          <td>
-            {% if user_report %}
-              <a href="{{ url_for('report.view_report', report_id=user_report.id) }}">
-                제출됨
-              </a>
-            {% else %}
-              미제출
-            {% endif %}
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-
-{% else %}
-  <h2>📅 내 주간보고</h2>
-  <div class="report-grid">
+<h2>{{ current_user.name }}'s Weekly Reports</h2>
+<table>
+    <tr><th>Week</th><th>Status</th><th>Submitted At</th><th>Actions</th></tr>
     {% for report in reports %}
-      <div class="report-card">
-        <h3>{{ report.week_start.strftime('%Y-%m-%d') }} ~ {{ report.week_end.strftime('%m-%d') }}</h3>
-        <p>상태: {{ report.status }}</p>
-        <a href="{{ url_for('report.view_report', report_id=report.id) }}">보기</a>
-      </div>
+    <tr>
+        <td>{{ report.week_start.strftime('%Y-%m-%d') }} ~ {{ report.week_end.strftime('%Y-%m-%d') }}</td>
+        <td>{{ report.status }}</td>
+        <td>{{ report.submitted_at or "-" }}</td>
+        <td><a href="{{ url_for('main.edit_report', report_id=report.id) }}">Edit</a></td>
+    </tr>
     {% endfor %}
-  </div>
-{% endif %}
-
-{% endblock %}
+</table>

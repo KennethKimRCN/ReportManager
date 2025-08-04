@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Edit Weekly Report</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+</head>
+<body>
+  <h2>Weekly Report for {{ report.week_start.strftime('%Y-%m-%d') }}</h2>
+
+  <form method="POST" action="{{ url_for('main.update_report') }}">
+    <input type="hidden" name="report_id" value="{{ report.id }}">
+
+    <!-- Notes Section -->
+    <button type="button" onclick="toggleSection('notes')">📄 기타사항</button>
+    <div id="notes" class="section open">
+      <textarea name="note" rows="5" cols="80">{{ report.other_notes_entries[0].note if report.other_notes_entries else '' }}</textarea>
+    </div>
+
+    <!-- Personal Schedule Section -->
+    <button type="button" onclick="toggleSection('schedules')">🗓️ 개인 일정</button>
+    <div id="schedules" class="section">
+      <div id="scheduleContainer"></div>
+      <button type="button" onclick="addSchedule()">+ Add Schedule</button>
+    </div>
+
+    <!-- Solution Items Section -->
+    <button type="button" onclick="toggleSection('solutions')">💼 솔루션 / 프로젝트</button>
+    <div id="solutions" class="section">
+      <div id="solutionContainer"></div>
+      <button type="button" onclick="addSolution()">+ Add Solution Item</button>
+      <button type="button" onclick="openProjectPopup()">📌 Select Projects</button>
+    </div>
+
+    <br><br>
+    <button type="submit">💾 Save Report</button>
+  </form>
+
+  <!-- Project Selection Modal -->
+  {% include 'project_popup.html' %}
+</body>
+</html>

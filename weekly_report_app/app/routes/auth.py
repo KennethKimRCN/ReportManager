@@ -1,30 +1,27 @@
-from flask import Blueprint, render_template, request, redirect, session, url_for, flash
-from app.models import User
-from app import db
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask_login import login_user, logout_user
+from .models import User
+from . import db, login_manager
 
-bp = Blueprint('auth', __name__, url_prefix='/auth')
+auth = Blueprint('auth', __name__)
 
-
-@bp.route('/login', methods=['GET', 'POST'])
+@auth.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        employee_id = request.form.get('employee_id')
+        employee_id = request.form['employee_id'].strip()
         user = User.query.filter_by(employee_id=employee_id).first()
-
         if user:
-            session['user_id'] = user.id
-            session['is_manager'] = user.is_manager
-            session['user_name'] = user.name
-            session['employee_id'] = user.employee_id
-            return redirect(url_for('dashboard.index'))
+            login_user(user)
+            return redirect(url_for('main.dashboard'))
         else:
-            flash('Invalid Employee ID')
-            return redirect(url_for('auth.login'))
-
+            flash('Invalid employee ID')
     return render_template('login.html')
 
-
-@bp.route('/logout')
+@auth.route('/logout')
 def logout():
-    session.clear()
+    logout_user()
     return redirect(url_for('auth.login'))
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))

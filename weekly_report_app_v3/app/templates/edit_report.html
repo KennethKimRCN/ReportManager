@@ -4,37 +4,30 @@
 
 {% block content %}
 <h2>{{ report.user.name }}'s Y{{ report.year }} W{{ report.week }} Weekly Report - ID: {{ report.id }}</h2>
-Status: {{ report.status }}
+<p>Status: {{ report.status }}</p>
 
 <form method="POST">
-  
   <button type="button" id="add-solution-btn">Add Solution</button><br><br>
 
-  <!-- Preloaded existing updates -->
   <div id="solution-container">
     {% for item in existing_updates %}
     <div class="solution-wrapper" style="margin-bottom: 12px; border: 1px solid #ccc; padding: 10px;">
-      <!--Solution Container-->
       <div class="solution-row">
         <button type="button" class="remove-solution">X</button>
         <label class="solution-label">솔루션: {{ item.solution_name }}</label>
         <input type="hidden" name="solution_item_ids[]" value="{{ item.solution_id }}">
         <button type="button" class="add-project">Add Project</button>
       </div>
-      <!--Project Container-->
-      <div class="project-wrapper" style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
-        <div>프로젝트: {{ item.solution_name }} /
-          {{ item.location }} /
-          {{ item.company }} /
-          {{ item.project_name }} /
-          {{ item.code }} /
-          {{ item.assignees | join(', ') }}</div>
-        <input type="hidden" name="project_ids[]" value="{{ item.project_id }}">
 
+      <div class="project-wrapper" style="margin-top: 10px; border: 1px solid #ddd; padding: 10px;">
+        <div>
+          프로젝트: {{ item.solution_name }} / {{ item.location }} / {{ item.company }} /
+          {{ item.project_name }} / {{ item.code }} / {{ item.assignees | map(attribute='name') | join(', ') }}
+        </div>
+        <input type="hidden" name="project_ids[]" value="{{ item.project_id }}">
         <button type="button" class="remove-project">Remove Project</button>
-        
-        <!--Project Details-->
-        <div class="project-details" style="display: block; margin-top: 10px;">
+
+        <div class="project-details" style="margin-top: 10px;">
           <label>Schedule:
             <textarea name="schedules[]" rows="2" class="form-control">{{ item.schedule }}</textarea>
           </label><br>
@@ -53,14 +46,15 @@ Status: {{ report.status }}
   <button type="submit">Update Report</button>
 </form>
 
-<!-- Templates for JS to clone -->
+<!-- Templates -->
 <template id="solution-template">
   <div class="solution-wrapper" style="margin-bottom: 12px; border: 1px solid #ccc; padding: 10px;">
-    <select name="solution_item_ids[]" required class="solution-select">
-      <option value="">Select a solution item</option>
-    </select>
+    <div class="solution-row">
+      <button type="button" class="remove-solution">X</button>
       <label class="solution-label">솔루션: <span class="selected-solution-name"></span></label>
       <input type="hidden" name="solution_item_ids[]" class="solution-id">
+      <button type="button" class="add-project">Add Project</button>
+    </div>
   </div>
 </template>
 
@@ -79,7 +73,7 @@ Status: {{ report.status }}
     <input type="hidden" name="project_ids[]" class="project-id">
     <button type="button" class="remove-project">Remove Project</button>
 
-    <div class="project-details" style="display: none; margin-top: 10px;">
+    <div class="project-details" style="margin-top: 10px;">
       <label>Schedule:
         <textarea name="schedules[]" rows="2" class="form-control"></textarea>
       </label><br>
@@ -93,55 +87,41 @@ Status: {{ report.status }}
   </div>
 </template>
 
-<!-- Solution Selection Modal -->
-<div id="solution-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); z-index:1000;">
-  <div style="background:white; width:500px; margin:10% auto; padding:20px; border-radius:10px; position:relative;">
+<!-- Solution Modal -->
+<div id="solution-modal" class="modal">
+  <div class="modal-content">
     <h3>Select a Solution</h3>
-    <table id="solution-table" style="width:100%; border-collapse: collapse;">
+    <table id="solution-table">
       <thead>
-        <tr>
-          <th style="border-bottom:1px solid #ccc; text-align:left; padding:8px;">ID</th>
-          <th style="border-bottom:1px solid #ccc; text-align:left; padding:8px;">Solution Name</th>
-        </tr>
+        <tr><th>ID</th><th>Solution Name</th></tr>
       </thead>
       <tbody>
         {% for sol in solution_items %}
-        <tr class="solution-row" data-id="{{ sol.id }}" data-name="{{ sol.name }}" style="cursor:pointer;">
-          <td style="padding:8px;">{{ sol.id }}</td>
-          <td style="padding:8px;">{{ sol.name }}</td>
+        <tr class="solution-row" data-id="{{ sol.id }}" data-name="{{ sol.name }}">
+          <td>{{ sol.id }}</td>
+          <td>{{ sol.name }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-    <br>
     <button id="cancel-add-solution">Cancel</button>
   </div>
 </div>
 
-<!-- Project Selection Modal -->
-<div id="project-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background-color:rgba(0,0,0,0.5); z-index:1000;">
-  <div style="background:white; width:800px; margin:5% auto; padding:20px; border-radius:10px; position:relative;">
+<!-- Project Modal -->
+<div id="project-modal" class="modal">
+  <div class="modal-content">
     <h3>Select a Project</h3>
-    <table id="project-table" style="width:100%; border-collapse: collapse;">
+    <table id="project-table">
       <thead>
-        <tr>
-          <th>ID</th>
-          <th>Location</th>
-          <th>Company</th>
-          <th>Project Name</th>
-          <th>Code</th>
-        </tr>
+        <tr><th>ID</th><th>Location</th><th>Company</th><th>Project Name</th><th>Code</th></tr>
       </thead>
-      <tbody>
-        <!-- JS will populate this dynamically -->
-      </tbody>
+      <tbody></tbody>
     </table>
-    <br>
     <button id="cancel-project-selection">Cancel</button>
   </div>
 </div>
 
-<!-- Pass data to JS -->
 <script>
   const solutionItems = {{ solution_items | tojson }};
   const projectsBySolution = {{ projects_by_solution | tojson }};

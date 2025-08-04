@@ -1,22 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Collaborative Editor</title>
-    <script src="/static/script.js"></script>
-    <style>
-        textarea { width: 100%; height: 100px; margin-bottom: 10px; }
-    </style>
+  <title>Collaborative Editor</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
 </head>
 <body>
-    <h2>Collaborative Project Editor</h2>
+  <h2>Collaborative Editor</h2>
+  <div id="users"></div>
 
-    <label>Schedule:</label><br>
-    <textarea id="schedule"></textarea><br>
+  <h3>Schedule</h3>
+  <textarea id="schedule" rows="5" cols="50"></textarea>
 
-    <label>Progress:</label><br>
-    <textarea id="progress"></textarea><br>
+  <h3>Progress</h3>
+  <textarea id="progress" rows="5" cols="50"></textarea>
 
-    <label>Other Notes:</label><br>
-    <textarea id="other_notes"></textarea><br>
+  <h3>Notes</h3>
+  <textarea id="notes" rows="5" cols="50"></textarea>
+
+  <script>
+    const USER_ID = "{{ user_id }}";
+    const NAME = "{{ name }}";
+  </script>
 </body>
 </html>
