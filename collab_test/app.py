@@ -1,71 +1,68 @@
-import eventlet
 from flask import Flask, render_template, request, redirect, session, url_for
-from flask_socketio import SocketIO, emit, join_room
-
-eventlet.monkey_patch()
+from flask_socketio import SocketIO, emit, join_room, leave_room
+from threading import Lock
 
 app = Flask(__name__)
-app.secret_key = "secret"
+app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app)
 
-users = {}       # user_id -> {'name': ..., 'sid': ..., 'cursor': ...}
-document = {
-    "schedule": "",
-    "progress": "",
-    "notes": ""
+# Document state
+box1 = {"text": ""}
+box2 = {"text": ""}
+user_count = 0
+lock = Lock()
+
+# Permissions
+permissions = {
+    "box1": {"A", "B"},
+    "box2": {"B", "C"}
 }
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
+def home():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+    return render_template('index.html', username=session['username'], permissions=permissions)
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        name = request.form['name']
-        user_id = request.form['user_id']
-        session['name'] = name
-        session['user_id'] = user_id
-        return redirect('/editor')
+        session['username'] = request.form['username']
+        return redirect(url_for('home'))
     return render_template('login.html')
-
-@app.route('/editor')
-def editor():
-    if 'user_id' not in session:
-        return redirect('/')
-    return render_template('editor.html', name=session['name'], user_id=session['user_id'])
 
 @socketio.on('connect')
 def handle_connect():
-    pass
-
-@socketio.on('join')
-def handle_join(data):
-    user_id = data['user_id']
-    name = data['name']
-    users[user_id] = {'name': name, 'sid': request.sid, 'cursor': None}
-    emit('user_list', users, broadcast=True)
-    emit('load_document', document, room=request.sid)
-
-@socketio.on('update_field')
-def handle_update(data):
-    field = data['field']
-    value = data['value']
-    document[field] = value
-    emit('update_field', data, broadcast=True, include_self=False)
-
-@socketio.on('cursor_move')
-def handle_cursor(data):
-    user_id = data['user_id']
-    users[user_id]['cursor'] = data['cursor']
-    emit('update_cursor', {'user_id': user_id, 'cursor': data['cursor']}, broadcast=True, include_self=False)
+    global user_count
+    with lock:
+        user_count += 1
+    socketio.emit('user_count', {'count': user_count})
 
 @socketio.on('disconnect')
 def handle_disconnect():
-    to_remove = None
-    for uid, u in users.items():
-        if u['sid'] == request.sid:
-            to_remove = uid
-            break
-    if to_remove:
-        del users[to_remove]
-        emit('user_list', users, broadcast=True)
+    global user_count
+    with lock:
+        user_count = max(0, user_count - 1)
+    socketio.emit('user_count', {'count': user_count})
+
+@socketio.on('request_initial_data')
+def send_initial_data():
+    emit('load_texts', {"box1": box1["text"], "box2": box2["text"]})
+
+@socketio.on('text_update')
+def handle_text_update(data):
+    username = data['username']
+    box_id = data['box']
+    text = data['text']
+
+    # Update correct box if user has permission
+    if username in permissions[box_id]:
+        if box_id == "box1":
+            box1["text"] = text
+        elif box_id == "box2":
+            box2["text"] = text
+        emit('broadcast_text', data, broadcast=True, include_self=False)
+
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0', port=5000)
+    socketio.run(app, debug=True)
