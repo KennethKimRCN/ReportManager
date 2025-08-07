@@ -3,24 +3,27 @@ const box1 = document.getElementById('box1');
 const box2 = document.getElementById('box2');
 const userCountDisplay = document.getElementById('user-count');
 
-// Track local changes
+const userListDisplay = document.createElement('div');
+userCountDisplay.insertAdjacentElement('afterend', userListDisplay);
+
 let localUpdate = false;
 
 socket.on('connect', () => {
+    // Register current user
+    socket.emit('register_user', { username: USERNAME });
     socket.emit('request_initial_data');
 });
 
-// Load initial texts
 socket.on('load_texts', data => {
     box1.value = data.box1;
     box2.value = data.box2;
 });
 
-socket.on('user_count', data => {
-    userCountDisplay.textContent = data.count;
+socket.on('user_info', data => {
+    userCountDisplay.textContent = `Users in session: ${data.count}`;
+    userListDisplay.textContent = `Joined users: ${data.users.join(', ')}`;
 });
 
-// Listen for external updates
 socket.on('broadcast_text', data => {
     if (!localUpdate) {
         if (data.box === "box1") box1.value = data.text;
@@ -29,7 +32,6 @@ socket.on('broadcast_text', data => {
     localUpdate = false;
 });
 
-// Emit input changes
 [box1, box2].forEach(input => {
     input.addEventListener('input', () => {
         localUpdate = true;
